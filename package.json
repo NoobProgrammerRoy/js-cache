@@ -4,9 +4,10 @@
   "description": "Redis-compatible in-memory cache built in JavaScript",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "tsc --watch",
+    "dev": "tsx --env-file .env --watch src/index.ts",
     "build": "tsc",
     "type:check": "tsc --noEmit",
+    "start": "node --env-file .env.prod dist/index.js",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
@@ -15,7 +16,9 @@
   "license": "ISC",
   "type": "module",
   "devDependencies": {
+    "@types/node": "^24.9.1",
     "prettier": "^3.6.2",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   }
 }
