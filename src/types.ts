@@ -6,4 +6,9 @@ export interface IStore<K, V> {
   has: (key: K) => boolean;
 }
 
+export interface IAOF {
+  append: (operation: string, ...args: string[]) => Promise<void>;
+  load: () => Promise<string[][]>;
+}
+
 export type TRespType = string | number | boolean | null | TRespType[];

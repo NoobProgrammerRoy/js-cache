@@ -6,7 +6,7 @@ class RespParser {
     return value;
   }
 
-  private static parseValue(
+  static parseValue(
     data: string,
     position: number
   ): { value: TRespType; nextPosition: number } {
