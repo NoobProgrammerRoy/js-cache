@@ -1,23 +1,23 @@
 # JS Cache
 
-JS Cache is a Redis-compatible in-memory cache in Javascript. This project is made to demonstrate the fundamentals of Redis and similar key-value data stores.
+JS Cache is a Redis-compatible in-memory cache in Node.js. This project is made to demonstrate the fundamentals of Redis and similar key-value data stores.
 
 ## Features
 
 - Zero run-time dependencies
 - Interact using Redis-CLI (RESP)
 - Configurable persistence via Append-Only Files (AOF)
-- Redis commands [GET, SET, EXISTS, DEL and FLUSHALL] supported
+- Existing Redis commands supported
 
 ## Installation
 
-```bash
+```
 npm install
 ```
 
 ## Running the server
 
-```bash
+```
 npm run dev
 ```
 
@@ -38,3 +38,28 @@ I'm planning to use this project as a learning reference to implement more featu
 - More Redis commands
 - Redis data structures
 - Improved AOF implementation
+
+## Supported commands
+
+- GET
+- SET
+- EXISTS
+- DEL
+- FLUSHALL
+
+## Roadmap
+
+- ✅ RESP serialization/deserialization
+- ✅ Basic key-value operations
+- ✅ Append-Only File (AOF) persistence
+- ✅ TCP server with graceful shutdown
+- [ ] String commands
+- [ ] List commands
+- [ ] Hash commands
+- [ ] Set / Sorted set commands
+- [ ] Misc. server commands
+- [ ] Expiration and TTL
+- [ ] Improved AOF persistence
+- [ ] Multiple eviction strategies
+- [ ] Indexing
+- [ ] ACL
