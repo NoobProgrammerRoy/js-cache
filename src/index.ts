@@ -88,6 +88,17 @@ async function init() {
               response = 'OK';
               if (AOF_ENABLED) await aof.append(operation);
               break;
+            case 'PING':
+              if (args.length === 0) {
+                response = 'PONG';
+                break;
+              }
+
+              response = args.reduce(
+                (acc, curr, idx) => acc + (idx > 0 ? ' ' : '') + curr,
+                ''
+              );
+              break;
             default:
               response = `Unknown command: ${operation}`;
           }
