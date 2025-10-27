@@ -1,8 +1,10 @@
 import * as net from 'net';
 import AOF from './aof.js';
+import { RespError } from './error.js';
 import MapStore from './map.js';
 import RespParser from './resp-parser.js';
 import { TRespType } from './types.js';
+import { getNumberFromString } from './util.js';
 
 const PORT = process.env.PORT ?? 6379;
 const AOF_ENABLED = process.env.AOF_ENABLED === 'true';
@@ -28,6 +30,15 @@ async function init() {
             break;
           case 'DEL':
             args.forEach((key) => store.delete(key));
+            break;
+          case 'INCR':
+            if (args.length === 1) {
+              const key = args[0];
+              const currentValue = store.get(key);
+              const newValue =
+                currentValue === undefined ? 1 : Number(currentValue) + 1;
+              store.set(key, newValue.toString());
+            }
             break;
           case 'FLUSHALL':
             store.clear();
@@ -99,6 +110,31 @@ async function init() {
                 ''
               );
               break;
+            case 'INCR':
+              if (args.length === 1) {
+                const key = args[0];
+                const currentValue = store.get(key);
+                let newValue: number;
+
+                if (currentValue === undefined) {
+                  newValue = 1;
+                } else if (
+                  typeof currentValue === 'string' &&
+                  getNumberFromString(currentValue)
+                ) {
+                  newValue = Number(currentValue) + 1;
+                } else {
+                  throw new RespError(
+                    'value is not an integer or out of range'
+                  );
+                }
+
+                store.set(key, newValue.toString());
+                response = newValue;
+
+                if (AOF_ENABLED) await aof.append(operation, key);
+              }
+              break;
             default:
               response = `Unknown command: ${operation}`;
           }
@@ -107,7 +143,11 @@ async function init() {
         socket.write(RespParser.serialize(response));
       } catch (err) {
         console.error('Error processing command:', err);
-        socket.write(RespParser.serialize(`Error: ${(err as Error).message}`));
+        const errorResponse =
+          err instanceof RespError
+            ? err
+            : new RespError((err as Error).message);
+        socket.write(RespParser.serialize(errorResponse));
       }
     });
 

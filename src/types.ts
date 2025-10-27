@@ -1,3 +1,5 @@
+import { RespError } from './error.js';
+
 export interface IStore<K, V> {
   get: (key: K) => V | undefined;
   set: (key: K, value: V) => void;
@@ -11,4 +13,10 @@ export interface IAOF {
   load: () => Promise<string[][]>;
 }
 
-export type TRespType = string | number | boolean | null | TRespType[];
+export type TRespType =
+  | string
+  | number
+  | boolean
+  | null
+  | RespError
+  | TRespType[];

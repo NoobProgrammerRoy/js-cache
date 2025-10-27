@@ -47,6 +47,7 @@ I'm planning to use this project as a learning reference to implement more featu
 - DEL
 - FLUSHALL
 - PING
+- INCR
 
 ## Roadmap
 

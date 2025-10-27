@@ -1,3 +1,4 @@
+import { RespError } from './error.js';
 import { TRespType } from './types.js';
 
 class RespParser {
@@ -84,6 +85,9 @@ class RespParser {
 
   // Serializer: JavaScript types to RESP
   static serialize(value: TRespType): string {
+    if (value instanceof RespError) {
+      return `-ERR ${value.message}\r\n`;
+    }
     if (typeof value === 'string') {
       return `$${value.length}\r\n${value}\r\n`;
     }
