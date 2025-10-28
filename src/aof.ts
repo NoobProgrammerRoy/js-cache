@@ -1,72 +1,72 @@
 import * as fs from 'fs/promises';
+import { RespError } from './error.js';
 import RespParser from './resp-parser.js';
-import { IAOF, TRespType } from './types.js';
+import { IAOF, IAOFConfig, TRespType, TWriteOperation } from './types.js';
 
 class AOF implements IAOF {
-  private filename: string;
+  private config: IAOFConfig;
 
-  constructor(filename: string) {
-    this.filename = filename;
+  constructor(config: IAOFConfig) {
+    this.config = config;
   }
 
-  async append(operation: string, ...args: string[]) {
+  async append(operation: TWriteOperation, ...args: TRespType[]) {
+    if (!this.config.isEnabled) return;
+
     try {
       const command = [operation, ...args];
-      const respFormatted = RespParser.serialize(command as TRespType[]);
+      const serializedCommand = RespParser.serialize(command);
 
-      // Append to file with newline separator
-      await fs.appendFile(this.filename, respFormatted);
+      await fs.appendFile(this.config.filename, serializedCommand);
     } catch (err) {
-      console.error(`Failed to append to AOF file ${this.filename}:`, err);
+      console.error(
+        `Failed to append to AOF file ${this.config.filename}:`,
+        err
+      );
+
+      throw new RespError('Background save failed');
     }
   }
 
-  async load(): Promise<string[][]> {
-    try {
-      // Check if file exists
-      try {
-        await fs.access(this.filename);
-      } catch {
-        // File doesn't exist yet
-        return [];
-      }
+  async load() {
+    if (!this.config.isEnabled) return [];
 
-      const data = await fs.readFile(this.filename, 'utf-8');
+    try {
+      await fs.access(this.config.filename);
+    } catch {
+      return [];
+    }
+
+    try {
+      const data = await fs.readFile(this.config.filename, 'utf-8');
+
       if (!data.trim()) return [];
 
-      const commands: string[][] = [];
+      const commands: TRespType[][] = [];
       let position = 0;
 
       // Parse each RESP command sequentially
       while (position < data.length) {
-        try {
-          const { value, nextPosition } = RespParser.parseValue(data, position);
+        const { value, nextPosition } = RespParser.parseValue(data, position);
 
-          if (Array.isArray(value)) {
-            commands.push(value as string[]);
-          }
-
-          position = nextPosition;
-
-          // Skip any trailing whitespace/newlines
-          while (
-            position < data.length &&
-            (data[position] === '\r' || data[position] === '\n')
-          ) {
-            position++;
-          }
-        } catch (err) {
-          console.warn(
-            `Failed to parse AOF command at position ${position}:`,
-            err
-          );
-          break;
+        if (Array.isArray(value)) {
+          commands.push(value);
         }
+
+        position = nextPosition;
+
+        // Skip any trailing whitespace/newlines
+        while (
+          position < data.length &&
+          (data[position] === '\r' || data[position] === '\n')
+        )
+          position++;
       }
 
       return commands;
     } catch (err) {
-      console.error(`Failed to load AOF file ${this.filename}:`, err);
+      console.error(`Failed to load AOF file ${this.config.filename}:`, err);
+
       return [];
     }
   }

@@ -1,56 +1,59 @@
 import * as net from 'net';
 import AOF from './aof.js';
 import { RespError } from './error.js';
-import MapStore from './map.js';
+import MapStore from './map-store.js';
 import RespParser from './resp-parser.js';
-import { TRespType } from './types.js';
+import { IAOFConfig, TRespType } from './types.js';
 import { getNumberFromString } from './util.js';
 
 const PORT = process.env.PORT ?? 6379;
-const AOF_ENABLED = process.env.AOF_ENABLED === 'true';
-const AOF_FILENAME = process.env.AOF_FILENAME ?? 'appendonly.aof';
+
+const config = {
+  filename: process.env.AOF_FILENAME ?? 'appendonly.aof',
+  isEnabled: process.env.AOF_ENABLED === 'true',
+} satisfies IAOFConfig;
 
 const store = new MapStore<string, TRespType>();
-const aof = new AOF(AOF_FILENAME);
+const aof = new AOF(config);
 
-async function init() {
-  if (AOF_ENABLED) {
-    console.log(`📂 Loading AOF from ${AOF_FILENAME}`);
-    const commands = await aof.load();
+async function initAOF(config: IAOFConfig) {
+  console.log(`📂 Loading AOF from ${config.filename}`);
+  const commands = await aof.load();
 
-    for (const command of commands) {
-      const [operation, ...args] = command as string[];
+  for (const command of commands) {
+    const [operation, ...args] = command as string[];
 
-      try {
-        switch (operation.toUpperCase()) {
-          case 'SET':
-            if (args.length === 2) {
-              store.set(args[0], args[1]);
-            }
-            break;
-          case 'DEL':
-            args.forEach((key) => store.delete(key));
-            break;
-          case 'INCR':
-            if (args.length === 1) {
-              const key = args[0];
-              const currentValue = store.get(key);
-              const newValue =
-                currentValue === undefined ? 1 : Number(currentValue) + 1;
-              store.set(key, newValue.toString());
-            }
-            break;
-          case 'FLUSHALL':
-            store.clear();
-            break;
-        }
-      } catch (err) {
-        console.error(`Failed to replay AOF command ${operation}:`, err);
+    try {
+      switch (operation.toUpperCase()) {
+        case 'SET':
+          if (args.length === 2) store.set(args[0], args[1]);
+          break;
+        case 'DEL':
+          args.forEach((key) => store.delete(key));
+          break;
+        case 'INCR':
+          if (args.length === 1) {
+            const key = args[0];
+            const currentValue = store.get(key);
+            const newValue =
+              currentValue === undefined ? 1 : Number(currentValue) + 1;
+
+            store.set(key, newValue.toString());
+          }
+          break;
+        case 'FLUSHALL':
+          store.clear();
+          break;
       }
+    } catch (err) {
+      console.error(`Failed to replay AOF command ${operation}:`, err);
     }
-    console.log(`✅ AOF loaded with ${commands.length} commands`);
   }
 
+  console.log(`✅ AOF loaded with ${commands.length} commands`);
+}
+
+function createServer(config: IAOFConfig) {
   const server = net.createServer((socket) => {
     let buffer = '';
 
@@ -75,29 +78,31 @@ async function init() {
                 store.set(args[0], args[1]);
                 response = 'OK';
 
-                if (AOF_ENABLED) await aof.append(operation, ...args);
+                await aof.append(operation, ...args);
               }
+
               break;
             case 'GET':
-              if (args.length === 1) {
-                response = store.get(args[0]) ?? null;
-              }
+              if (args.length === 1) response = store.get(args[0]) ?? null;
               break;
             case 'DEL':
               if (args.length >= 1) {
                 response = args.filter((key) => store.delete(key)).length;
-                if (AOF_ENABLED) await aof.append(operation, ...args);
+
+                await aof.append(operation, ...args);
               }
+
               break;
             case 'EXISTS':
-              if (args.length >= 1) {
+              if (args.length >= 1)
                 response = args.filter((key) => store.has(key)).length;
-              }
+
               break;
             case 'FLUSHALL':
               store.clear();
               response = 'OK';
-              if (AOF_ENABLED) await aof.append(operation);
+
+              await aof.append(operation);
               break;
             case 'PING':
               if (args.length === 0) {
@@ -109,6 +114,7 @@ async function init() {
                 (acc, curr, idx) => acc + (idx > 0 ? ' ' : '') + curr,
                 ''
               );
+
               break;
             case 'INCR':
               if (args.length === 1) {
@@ -132,8 +138,9 @@ async function init() {
                 store.set(key, newValue.toString());
                 response = newValue;
 
-                if (AOF_ENABLED) await aof.append(operation, key);
+                await aof.append(operation, key);
               }
+
               break;
             default:
               response = `Unknown command: ${operation}`;
@@ -163,7 +170,13 @@ async function init() {
   return server;
 }
 
-init()
+async function init(config: IAOFConfig) {
+  await initAOF(config);
+
+  return createServer(config);
+}
+
+init(config)
   .then((server) => {
     server.listen(PORT, () => {
       console.log(`TCP Server listening on port ${PORT}`);
