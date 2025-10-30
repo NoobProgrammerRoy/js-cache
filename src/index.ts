@@ -36,7 +36,7 @@ async function initAOF(config: IAOFConfig) {
             const key = args[0];
             const currentValue = store.get(key);
             const newValue =
-              currentValue === undefined ? 0 : Number(currentValue) + 1;
+              currentValue === undefined ? 1 : Number(currentValue) + 1;
 
             store.set(key, newValue.toString());
           }
@@ -101,7 +101,7 @@ export function getResponseFromOperation(operation: string, args: string[]) {
         let newValue: number;
 
         if (currentValue === undefined) {
-          newValue = 0;
+          newValue = 1;
         } else if (
           typeof currentValue === 'string' &&
           getNumberFromString(currentValue) !== undefined

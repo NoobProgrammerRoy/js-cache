@@ -105,7 +105,7 @@ describe('Command Execution', () => {
       assert.strictEqual(getResult, '6');
     });
 
-    it('should start at 0 for non-existent key', () => {
+    it('should start at 1 for non-existent key', () => {
       const result = getResponseFromOperation('INCR', ['newcounter']);
       assert.strictEqual(result, 1);
     });
