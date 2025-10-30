@@ -164,6 +164,35 @@ describe('Command Execution', () => {
     });
   });
 
+  describe('GETDEL command', () => {
+    it('should get and delete an existing key', () => {
+      getResponseFromOperation('SET', ['key', 'value']);
+      const result = getResponseFromOperation('GETDEL', ['key']);
+      assert.strictEqual(result, 'value');
+      const getResult = getResponseFromOperation('GET', ['key']);
+      assert.strictEqual(getResult, null);
+    });
+
+    it('should return null for non-existent key', () => {
+      const result = getResponseFromOperation('GETDEL', ['nonexistent']);
+      assert.strictEqual(result, null);
+    });
+
+    it('should throw for wrong number of arguments', () => {
+      assert.throws(() => {
+        getResponseFromOperation('GETDEL', []);
+      }, RespError);
+    });
+
+    it('should work with numeric string values', () => {
+      getResponseFromOperation('SET', ['num', '42']);
+      const result = getResponseFromOperation('GETDEL', ['num']);
+      assert.strictEqual(result, '42');
+      const getResult = getResponseFromOperation('GET', ['num']);
+      assert.strictEqual(getResult, null);
+    });
+  });
+
   describe('Unknown command', () => {
     it('should return unknown command message', () => {
       const result = getResponseFromOperation('UNKNOWN', []);

@@ -77,6 +77,26 @@ export function getResponseFromOperation(operation: string, args: string[]) {
     case 'GET':
       if (args.length === 1) response = store.get(args[0]) ?? null;
       break;
+    case 'GETDEL':
+      if (args.length === 1) {
+        const key = args[0];
+        const value = store.get(key);
+
+        if (value === null || value === undefined) {
+          response = null;
+        } else if (typeof value === 'string') {
+          response = value;
+          store.delete(key);
+        } else {
+          throw new RespError(
+            'GETDEL only works on string values, not ' + typeof value
+          );
+        }
+      } else {
+        throw new RespError('ERR wrong number of arguments for GETDEL command');
+      }
+
+      break;
     case 'DEL':
       if (args.length >= 1) {
         response = args.filter((key) => store.delete(key)).length;
