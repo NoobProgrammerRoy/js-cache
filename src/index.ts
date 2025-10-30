@@ -82,7 +82,7 @@ export function getResponseFromOperation(operation: string, args: string[]) {
         const key = args[0];
         const value = store.get(key);
 
-        if (value === null || value === undefined) {
+        if (value === undefined) {
           response = null;
         } else if (typeof value === 'string') {
           response = value;
