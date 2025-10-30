@@ -1,6 +1,6 @@
 {
   "name": "js-cache",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Redis-compatible in-memory cache built in JavaScript",
   "main": "dist/index.js",
   "scripts": {
@@ -8,6 +8,8 @@
     "build": "tsc",
     "type:check": "tsc --noEmit",
     "start": "node --env-file .env.prod dist/index.js",
+    "test": "node --test --import tsx test/**/*.test.ts",
+    "test:watch": "node --test --import tsx --watch test/**/*.test.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },

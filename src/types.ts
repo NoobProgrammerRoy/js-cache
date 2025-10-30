@@ -9,8 +9,13 @@ export interface IStore<K, V> {
 }
 
 export interface IAOF {
-  append: (operation: string, ...args: string[]) => Promise<void>;
-  load: () => Promise<string[][]>;
+  append: (operation: TWriteOperation, ...args: TRespType[]) => Promise<void>;
+  load: () => Promise<TRespType[][]>;
+}
+
+export interface IAOFConfig {
+  filename: string;
+  isEnabled: boolean;
 }
 
 export type TRespType =
@@ -20,3 +25,5 @@ export type TRespType =
   | null
   | RespError
   | TRespType[];
+
+export type TWriteOperation = 'SET' | 'DEL' | 'INCR' | 'FLUSHALL';

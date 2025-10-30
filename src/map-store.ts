@@ -1,7 +1,11 @@
 import { IStore } from './types.js';
 
 class MapStore<K, V> implements IStore<K, V> {
-  private map = new Map<K, V>();
+  private map;
+
+  constructor() {
+    this.map = new Map<K, V>();
+  }
 
   get(key: K) {
     return this.map.get(key);
