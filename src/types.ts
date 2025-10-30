@@ -26,4 +26,4 @@ export type TRespType =
   | RespError
   | TRespType[];
 
-export type TWriteOperation = 'SET' | 'DEL' | 'INCR' | 'FLUSHALL';
+export type TWriteOperation = 'SET' | 'DEL' | 'INCR' | 'DECR' | 'FLUSHALL';

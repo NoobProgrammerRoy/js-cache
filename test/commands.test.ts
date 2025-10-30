@@ -130,6 +130,40 @@ describe('Command Execution', () => {
     });
   });
 
+  describe('DECR command', () => {
+    it('should decrement existing numeric value', () => {
+      getResponseFromOperation('SET', ['counter', '5']);
+      const result = getResponseFromOperation('DECR', ['counter']);
+      assert.strictEqual(result, 4);
+      const getResult = getResponseFromOperation('GET', ['counter']);
+      assert.strictEqual(getResult, '4');
+    });
+
+    it('should start at -1 for non-existent key', () => {
+      const result = getResponseFromOperation('DECR', ['newdecr']);
+      assert.strictEqual(result, -1);
+    });
+
+    it('should throw for non-numeric value', () => {
+      getResponseFromOperation('SET', ['notanumber', 'hello']);
+      assert.throws(() => {
+        getResponseFromOperation('DECR', ['notanumber']);
+      }, RespError);
+    });
+
+    it('should decrement from 0', () => {
+      getResponseFromOperation('SET', ['zero', '0']);
+      const result = getResponseFromOperation('DECR', ['zero']);
+      assert.strictEqual(result, -1);
+    });
+
+    it('should handle negative numbers', () => {
+      getResponseFromOperation('SET', ['negative', '-5']);
+      const result = getResponseFromOperation('DECR', ['negative']);
+      assert.strictEqual(result, -6);
+    });
+  });
+
   describe('Unknown command', () => {
     it('should return unknown command message', () => {
       const result = getResponseFromOperation('UNKNOWN', []);

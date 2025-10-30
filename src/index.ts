@@ -41,6 +41,16 @@ async function initAOF(config: IAOFConfig) {
             store.set(key, newValue.toString());
           }
           break;
+        case 'DECR':
+          if (args.length === 1) {
+            const key = args[0];
+            const currentValue = store.get(key);
+            const newValue =
+              currentValue === undefined ? -1 : Number(currentValue) - 1;
+
+            store.set(key, newValue.toString());
+          }
+          break;
         case 'FLUSHALL':
           store.clear();
           break;
@@ -116,6 +126,28 @@ export function getResponseFromOperation(operation: string, args: string[]) {
       }
 
       break;
+    case 'DECR':
+      if (args.length === 1) {
+        const key = args[0];
+        const currentValue = store.get(key);
+        let newValue: number;
+
+        if (currentValue === undefined) {
+          newValue = -1;
+        } else if (
+          typeof currentValue === 'string' &&
+          getNumberFromString(currentValue) !== undefined
+        ) {
+          newValue = Number(currentValue) - 1;
+        } else {
+          throw new RespError('value is not an integer or out of range');
+        }
+
+        store.set(key, newValue.toString());
+        response = newValue;
+      }
+
+      break;
     default:
       response = `Unknown command: ${operation}`;
   }
@@ -155,6 +187,9 @@ function createServer(config: IAOFConfig) {
               await aof.append(operation);
               break;
             case 'INCR':
+              await aof.append(operation, args[0]);
+              break;
+            case 'DECR':
               await aof.append(operation, args[0]);
               break;
           }
