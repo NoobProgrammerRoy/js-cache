@@ -225,7 +225,10 @@ async function init(config: IAOFConfig) {
 }
 
 // Only run server if this is the main module
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (
+  process.argv[1] &&
+  (process.argv[1].endsWith('index.ts') || process.argv[1].endsWith('index.js'))
+) {
   init(config)
     .then((server) => {
       server.listen(PORT, () => {
