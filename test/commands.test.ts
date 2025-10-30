@@ -105,7 +105,7 @@ describe('Command Execution', () => {
       assert.strictEqual(getResult, '6');
     });
 
-    it('should start at 0 for non-existent key', () => {
+    it('should start at 1 for non-existent key', () => {
       const result = getResponseFromOperation('INCR', ['newcounter']);
       assert.strictEqual(result, 1);
     });
@@ -127,6 +127,69 @@ describe('Command Execution', () => {
       getResponseFromOperation('SET', ['negative', '-5']);
       const result = getResponseFromOperation('INCR', ['negative']);
       assert.strictEqual(result, -4);
+    });
+  });
+
+  describe('DECR command', () => {
+    it('should decrement existing numeric value', () => {
+      getResponseFromOperation('SET', ['counter', '5']);
+      const result = getResponseFromOperation('DECR', ['counter']);
+      assert.strictEqual(result, 4);
+      const getResult = getResponseFromOperation('GET', ['counter']);
+      assert.strictEqual(getResult, '4');
+    });
+
+    it('should start at -1 for non-existent key', () => {
+      const result = getResponseFromOperation('DECR', ['newdecr']);
+      assert.strictEqual(result, -1);
+    });
+
+    it('should throw for non-numeric value', () => {
+      getResponseFromOperation('SET', ['notanumber', 'hello']);
+      assert.throws(() => {
+        getResponseFromOperation('DECR', ['notanumber']);
+      }, RespError);
+    });
+
+    it('should decrement from 0', () => {
+      getResponseFromOperation('SET', ['zero', '0']);
+      const result = getResponseFromOperation('DECR', ['zero']);
+      assert.strictEqual(result, -1);
+    });
+
+    it('should handle negative numbers', () => {
+      getResponseFromOperation('SET', ['negative', '-5']);
+      const result = getResponseFromOperation('DECR', ['negative']);
+      assert.strictEqual(result, -6);
+    });
+  });
+
+  describe('GETDEL command', () => {
+    it('should get and delete an existing key', () => {
+      getResponseFromOperation('SET', ['key', 'value']);
+      const result = getResponseFromOperation('GETDEL', ['key']);
+      assert.strictEqual(result, 'value');
+      const getResult = getResponseFromOperation('GET', ['key']);
+      assert.strictEqual(getResult, null);
+    });
+
+    it('should return null for non-existent key', () => {
+      const result = getResponseFromOperation('GETDEL', ['nonexistent']);
+      assert.strictEqual(result, null);
+    });
+
+    it('should throw for wrong number of arguments', () => {
+      assert.throws(() => {
+        getResponseFromOperation('GETDEL', []);
+      }, RespError);
+    });
+
+    it('should work with numeric string values', () => {
+      getResponseFromOperation('SET', ['num', '42']);
+      const result = getResponseFromOperation('GETDEL', ['num']);
+      assert.strictEqual(result, '42');
+      const getResult = getResponseFromOperation('GET', ['num']);
+      assert.strictEqual(getResult, null);
     });
   });
 

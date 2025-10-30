@@ -36,7 +36,17 @@ async function initAOF(config: IAOFConfig) {
             const key = args[0];
             const currentValue = store.get(key);
             const newValue =
-              currentValue === undefined ? 0 : Number(currentValue) + 1;
+              currentValue === undefined ? 1 : Number(currentValue) + 1;
+
+            store.set(key, newValue.toString());
+          }
+          break;
+        case 'DECR':
+          if (args.length === 1) {
+            const key = args[0];
+            const currentValue = store.get(key);
+            const newValue =
+              currentValue === undefined ? -1 : Number(currentValue) - 1;
 
             store.set(key, newValue.toString());
           }
@@ -66,6 +76,26 @@ export function getResponseFromOperation(operation: string, args: string[]) {
       break;
     case 'GET':
       if (args.length === 1) response = store.get(args[0]) ?? null;
+      break;
+    case 'GETDEL':
+      if (args.length === 1) {
+        const key = args[0];
+        const value = store.get(key);
+
+        if (value === undefined) {
+          response = null;
+        } else if (typeof value === 'string') {
+          response = value;
+          store.delete(key);
+        } else {
+          throw new RespError(
+            'GETDEL only works on string values, not ' + typeof value
+          );
+        }
+      } else {
+        throw new RespError('ERR wrong number of arguments for GETDEL command');
+      }
+
       break;
     case 'DEL':
       if (args.length >= 1) {
@@ -101,12 +131,34 @@ export function getResponseFromOperation(operation: string, args: string[]) {
         let newValue: number;
 
         if (currentValue === undefined) {
-          newValue = 0;
+          newValue = 1;
         } else if (
           typeof currentValue === 'string' &&
           getNumberFromString(currentValue) !== undefined
         ) {
           newValue = Number(currentValue) + 1;
+        } else {
+          throw new RespError('value is not an integer or out of range');
+        }
+
+        store.set(key, newValue.toString());
+        response = newValue;
+      }
+
+      break;
+    case 'DECR':
+      if (args.length === 1) {
+        const key = args[0];
+        const currentValue = store.get(key);
+        let newValue: number;
+
+        if (currentValue === undefined) {
+          newValue = -1;
+        } else if (
+          typeof currentValue === 'string' &&
+          getNumberFromString(currentValue) !== undefined
+        ) {
+          newValue = Number(currentValue) - 1;
         } else {
           throw new RespError('value is not an integer or out of range');
         }
@@ -157,6 +209,9 @@ function createServer(config: IAOFConfig) {
             case 'INCR':
               await aof.append(operation, args[0]);
               break;
+            case 'DECR':
+              await aof.append(operation, args[0]);
+              break;
           }
         }
 
@@ -190,7 +245,10 @@ async function init(config: IAOFConfig) {
 }
 
 // Only run server if this is the main module
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (
+  process.argv[1] &&
+  (process.argv[1].endsWith('index.ts') || process.argv[1].endsWith('index.js'))
+) {
   init(config)
     .then((server) => {
       server.listen(PORT, () => {
