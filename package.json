@@ -8,8 +8,8 @@
     "build": "tsc",
     "type:check": "tsc --noEmit",
     "start": "node --env-file .env.prod dist/index.js",
-    "test": "node --test --loader tsx test/**/*.test.ts",
-    "test:watch": "node --test --loader tsx --watch test/**/*.test.ts",
+    "test": "node --test --import tsx test/**/*.test.ts",
+    "test:watch": "node --test --import tsx --watch test/**/*.test.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
