@@ -11,12 +11,9 @@ function handleSet(store: IStore<string, TDataType>, args: string[]) {
 
   if (getNumberFromString(value) !== undefined) {
     store.set(key, Number(value));
-
-    return 'OK';
+  } else {
+    store.set(key, value);
   }
-
-  store.set(key, value);
-
   return 'OK';
 }
 
