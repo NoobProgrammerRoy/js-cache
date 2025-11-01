@@ -95,6 +95,30 @@ function handleIncr(store: IStore<string, TDataType>, args: string[]) {
   return newValue;
 }
 
+function handleIncrby(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for INCRBY command');
+
+  const key = args[0];
+  const incrementStr = args[1];
+
+  const increment = getNumberFromString(incrementStr);
+  if (increment === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const currentValue = store.get(key);
+  let newValue: number;
+
+  if (currentValue === undefined) newValue = increment;
+  else if (typeof currentValue === 'number')
+    newValue = Number(currentValue) + increment;
+  else throw new RespError('value is not an integer or out of range');
+
+  store.set(key, newValue);
+
+  return newValue;
+}
+
 function handleDecr(store: IStore<string, TDataType>, args: string[]) {
   if (args.length < 1)
     throw new RespError('wrong number of arguments for DECR command');
@@ -127,6 +151,7 @@ const commands: Record<string, CommandHandler> = {
   FLUSHALL: handleFlushall,
   PING: handlePing,
   INCR: handleIncr,
+  INCRBY: handleIncrby,
   DECR: handleDecr,
 };
 
