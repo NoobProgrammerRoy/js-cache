@@ -14,6 +14,7 @@ function handleSet(store: IStore<string, TDataType>, args: string[]) {
   } else {
     store.set(key, value);
   }
+
   return 'OK';
 }
 
@@ -39,14 +40,10 @@ function handleGetDel(store: IStore<string, TDataType>, args: string[]) {
 
   if (value === undefined) return null;
 
-  if (typeof value === 'string') {
+  if (typeof value === 'string' || typeof value === 'number') {
     store.delete(key);
 
-    return value;
-  }
-
-  if (typeof value === 'number') {
-    store.delete(key);
+    if (typeof value === 'string') return value;
 
     return value.toString();
   }
