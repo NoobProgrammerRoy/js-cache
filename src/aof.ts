@@ -10,7 +10,7 @@ class AOF implements IAOF {
     this.config = config;
   }
 
-  async append(operation: TWriteOperation, ...args: TRespType[]) {
+  async append(operation: TWriteOperation, ...args: string[]) {
     if (!this.config.isEnabled) return;
 
     try {
@@ -49,9 +49,7 @@ class AOF implements IAOF {
       while (position < data.length) {
         const { value, nextPosition } = RespParser.parseValue(data, position);
 
-        if (Array.isArray(value)) {
-          commands.push(value);
-        }
+        if (Array.isArray(value)) commands.push(value);
 
         position = nextPosition;
 

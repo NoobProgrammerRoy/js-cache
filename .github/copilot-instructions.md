@@ -1,5 +1,12 @@
 # TypeScript Writing Tips
 
+## General Conventions
+
+- Use `camelCase` for variable and function names
+- Use `PascalCase` for class and interface names
+- Use `UPPER_SNAKE_CASE` for constants (e.g., `const MAX_SIZE = 100;`)
+- Code should be self-documenting; prefer clear naming over excessive comments. Add comments only when code complexity warrants explanation.
+
 ## Interfaces & Types
 
 - Use `interface` for defining contracts (e.g., `IStore<K, V>`, `IAOF`)
@@ -39,3 +46,11 @@
 - Throw descriptive errors with specific context (e.g., `Invalid RESP format: missing CRLF`)
 - Include expected vs actual values in error messages when comparing
 - Use try-catch blocks for async operations with meaningful error logging
+
+## Testing
+
+- Use `node:test` for writing unit tests
+- Structure tests with `describe`, `it`, and `beforeEach` blocks
+- Use `assert` for validations and comparisons
+- Use `async/await` for testing asynchronous code
+- Use `npm test` to run all tests

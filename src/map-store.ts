@@ -1,21 +1,21 @@
-import { IStore } from './types.js';
+import { IStore, TDataType } from './types.js';
 
-class MapStore<K, V> implements IStore<K, V> {
+class MapStore implements IStore<string, TDataType> {
   private map;
 
   constructor() {
-    this.map = new Map<K, V>();
+    this.map = new Map<string, TDataType>();
   }
 
-  get(key: K) {
+  get(key: string) {
     return this.map.get(key);
   }
 
-  set(key: K, value: V) {
+  set(key: string, value: TDataType) {
     this.map.set(key, value);
   }
 
-  delete(key: K) {
+  delete(key: string) {
     return this.map.delete(key);
   }
 
@@ -23,7 +23,7 @@ class MapStore<K, V> implements IStore<K, V> {
     this.map.clear();
   }
 
-  has(key: K): boolean {
+  has(key: string): boolean {
     return this.map.has(key);
   }
 }

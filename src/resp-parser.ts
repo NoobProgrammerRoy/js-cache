@@ -35,7 +35,6 @@ class RespParser {
         const length = parseInt(line, 10);
 
         if (length === -1) return { value: null, nextPosition };
-
         if (length < 0)
           throw new RespError(`Invalid bulk string length: ${length}`);
 
@@ -61,7 +60,6 @@ class RespParser {
         const count = parseInt(line, 10);
 
         if (count === -1) return { value: null, nextPosition };
-
         if (count < 0) throw new RespError(`Invalid array count: ${count}`);
 
         const array: TRespType[] = [];
@@ -83,17 +81,12 @@ class RespParser {
   }
 
   // Serializer: JavaScript types to RESP
-  static serialize(value: TRespType): string {
+  static serialize(value: TRespType | RespError): string {
     if (value instanceof RespError) return `-ERR ${value.message}\r\n`;
-
     if (typeof value === 'string') return `$${value.length}\r\n${value}\r\n`;
-
     if (typeof value === 'number') return `:${value}\r\n`;
-
     if (typeof value === 'boolean') return `:${value ? 1 : 0}\r\n`;
-
     if (value === null) return '$-1\r\n';
-
     if (Array.isArray(value)) {
       let result = `*${value.length}\r\n`;
 
