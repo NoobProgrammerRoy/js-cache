@@ -95,6 +95,30 @@ function handleIncr(store: IStore<string, TDataType>, args: string[]) {
   return newValue;
 }
 
+function handleIncrby(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for INCRBY command');
+
+  const key = args[0];
+  const incrementStr = args[1];
+
+  const increment = getNumberFromString(incrementStr);
+  if (increment === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const currentValue = store.get(key);
+  let newValue: number;
+
+  if (currentValue === undefined) newValue = increment;
+  else if (typeof currentValue === 'number')
+    newValue = Number(currentValue) + increment;
+  else throw new RespError('value is not an integer or out of range');
+
+  store.set(key, newValue);
+
+  return newValue;
+}
+
 function handleDecr(store: IStore<string, TDataType>, args: string[]) {
   if (args.length < 1)
     throw new RespError('wrong number of arguments for DECR command');
@@ -106,6 +130,30 @@ function handleDecr(store: IStore<string, TDataType>, args: string[]) {
   if (currentValue === undefined) newValue = -1;
   else if (typeof currentValue === 'number')
     newValue = Number(currentValue) - 1;
+  else throw new RespError('value is not an integer or out of range');
+
+  store.set(key, newValue);
+
+  return newValue;
+}
+
+function handleDecrby(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for DECRBY command');
+
+  const key = args[0];
+  const decrementStr = args[1];
+
+  const decrement = getNumberFromString(decrementStr);
+  if (decrement === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const currentValue = store.get(key);
+  let newValue: number;
+
+  if (currentValue === undefined) newValue = -decrement;
+  else if (typeof currentValue === 'number')
+    newValue = Number(currentValue) - decrement;
   else throw new RespError('value is not an integer or out of range');
 
   store.set(key, newValue);
@@ -127,7 +175,9 @@ const commands: Record<string, CommandHandler> = {
   FLUSHALL: handleFlushall,
   PING: handlePing,
   INCR: handleIncr,
+  INCRBY: handleIncrby,
   DECR: handleDecr,
+  DECRBY: handleDecrby,
 };
 
 export function getResponseFromOperation(

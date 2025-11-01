@@ -2,7 +2,14 @@ export type TDataType = string | number;
 
 export type TRespType = TDataType | boolean | null | TRespType[];
 
-export type TWriteOperation = 'SET' | 'DEL' | 'INCR' | 'DECR' | 'FLUSHALL';
+export type TWriteOperation =
+  | 'SET'
+  | 'DEL'
+  | 'INCR'
+  | 'INCRBY'
+  | 'DECR'
+  | 'DECRBY'
+  | 'FLUSHALL';
 
 export interface IStore<K, V> {
   get: (key: K) => V | undefined;
