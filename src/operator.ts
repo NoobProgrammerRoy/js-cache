@@ -137,6 +137,30 @@ function handleDecr(store: IStore<string, TDataType>, args: string[]) {
   return newValue;
 }
 
+function handleDecrby(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for DECRBY command');
+
+  const key = args[0];
+  const decrementStr = args[1];
+
+  const decrement = getNumberFromString(decrementStr);
+  if (decrement === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const currentValue = store.get(key);
+  let newValue: number;
+
+  if (currentValue === undefined) newValue = -decrement;
+  else if (typeof currentValue === 'number')
+    newValue = Number(currentValue) - decrement;
+  else throw new RespError('value is not an integer or out of range');
+
+  store.set(key, newValue);
+
+  return newValue;
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -153,6 +177,7 @@ const commands: Record<string, CommandHandler> = {
   INCR: handleIncr,
   INCRBY: handleIncrby,
   DECR: handleDecr,
+  DECRBY: handleDecrby,
 };
 
 export function getResponseFromOperation(

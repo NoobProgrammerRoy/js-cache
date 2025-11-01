@@ -41,7 +41,7 @@ async function persistToAOF(operation: TWriteOperation, args: string[]) {
   else if (operation === 'DEL') await aof.append(operation, ...args);
   else if (operation === 'INCR' || operation === 'DECR')
     await aof.append(operation, args[0]);
-  else if (operation === 'INCRBY')
+  else if (operation === 'INCRBY' || operation === 'DECRBY')
     await aof.append(operation, args[0], args[1]);
 }
 

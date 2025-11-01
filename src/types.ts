@@ -8,6 +8,7 @@ export type TWriteOperation =
   | 'INCR'
   | 'INCRBY'
   | 'DECR'
+  | 'DECRBY'
   | 'FLUSHALL';
 
 export interface IStore<K, V> {
