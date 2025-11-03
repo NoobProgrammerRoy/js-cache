@@ -66,6 +66,47 @@ function handleGetRange(store: IStore<string, TDataType>, args: string[]) {
   return str.substring(startIdx, endIdx + 1);
 }
 
+function handleSetRange(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 3)
+    throw new RespError('wrong number of arguments for SETRANGE command');
+
+  const key = args[0];
+  const offsetStr = args[1];
+  const valueToSet = args[2];
+
+  const offset = getNumberFromString(offsetStr);
+  if (offset === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  if (offset < 0)
+    throw new RespError('value is not an integer or out of range');
+
+  const currentValue = store.get(key);
+
+  // Convert current value to string (or empty string if non-existent)
+  let str = '';
+  if (currentValue !== undefined) {
+    str =
+      typeof currentValue === 'number'
+        ? currentValue.toString()
+        : String(currentValue);
+  }
+
+  // If offset is beyond current length, pad with null bytes
+  if (offset > str.length) {
+    str = str + '\x00'.repeat(offset - str.length);
+  }
+
+  // Overwrite from offset to offset + valueToSet.length
+  const before = str.substring(0, offset);
+  const after = str.substring(offset + valueToSet.length);
+  const newValue = before + valueToSet + after;
+
+  store.set(key, newValue);
+
+  return newValue.length;
+}
+
 function handleGetDel(store: IStore<string, TDataType>, args: string[]) {
   if (args.length < 1)
     throw new RespError('wrong number of arguments for GETDEL command');
@@ -244,6 +285,7 @@ const commands: Record<string, CommandHandler> = {
   SET: handleSet,
   GET: handleGet,
   GETRANGE: handleGetRange,
+  SETRANGE: handleSetRange,
   GETDEL: handleGetDel,
   APPEND: handleAppend,
   DEL: handleDel,
