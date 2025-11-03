@@ -10,6 +10,7 @@ export type TWriteOperation =
   | 'DECR'
   | 'DECRBY'
   | 'APPEND'
+  | 'SETRANGE'
   | 'FLUSHALL';
 
 export interface IStore<K, V> {
