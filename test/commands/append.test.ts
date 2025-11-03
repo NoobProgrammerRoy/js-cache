@@ -51,7 +51,7 @@ describe('APPEND command', () => {
     assert.strictEqual(value, 'Hello');
   });
 
-  it('should work for non-string value (numeric)', () => {
+  it('should work for strings appended with numeric values', () => {
     executeCommand('SET', ['counter', '42']);
     const result = executeCommand('APPEND', ['counter', 'text']);
     assert.strictEqual(result, 6);
