@@ -51,6 +51,33 @@ function handleGetDel(store: IStore<string, TDataType>, args: string[]) {
   return null;
 }
 
+function handleAppend(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for APPEND command');
+
+  const key = args[0];
+  const valueToAppend = args[1];
+  const currentValue = store.get(key);
+
+  let newValue: string;
+
+  if (currentValue === undefined) {
+    newValue = valueToAppend;
+  } else if (typeof currentValue === 'string') {
+    newValue = currentValue.concat(valueToAppend);
+  } else if (typeof currentValue === 'number') {
+    newValue = currentValue.toString().concat(valueToAppend);
+  } else {
+    throw new RespError(
+      'WRONGTYPE Operation against a key holding the wrong kind of value'
+    );
+  }
+
+  store.set(key, newValue);
+
+  return newValue.length;
+}
+
 function handleDel(store: IStore<string, TDataType>, args: string[]) {
   if (args.length < 1)
     throw new RespError('wrong number of arguments for DEL command');
@@ -86,7 +113,10 @@ function handleIncr(store: IStore<string, TDataType>, args: string[]) {
   let newValue: number;
 
   if (currentValue === undefined) newValue = 1;
-  else if (typeof currentValue === 'number')
+  else if (
+    typeof currentValue === 'number' ||
+    getNumberFromString(currentValue) !== undefined
+  )
     newValue = Number(currentValue) + 1;
   else throw new RespError('value is not an integer or out of range');
 
@@ -110,7 +140,10 @@ function handleIncrby(store: IStore<string, TDataType>, args: string[]) {
   let newValue: number;
 
   if (currentValue === undefined) newValue = increment;
-  else if (typeof currentValue === 'number')
+  else if (
+    typeof currentValue === 'number' ||
+    getNumberFromString(currentValue) !== undefined
+  )
     newValue = Number(currentValue) + increment;
   else throw new RespError('value is not an integer or out of range');
 
@@ -128,7 +161,10 @@ function handleDecr(store: IStore<string, TDataType>, args: string[]) {
   let newValue: number;
 
   if (currentValue === undefined) newValue = -1;
-  else if (typeof currentValue === 'number')
+  else if (
+    typeof currentValue === 'number' ||
+    getNumberFromString(currentValue) !== undefined
+  )
     newValue = Number(currentValue) - 1;
   else throw new RespError('value is not an integer or out of range');
 
@@ -152,7 +188,10 @@ function handleDecrby(store: IStore<string, TDataType>, args: string[]) {
   let newValue: number;
 
   if (currentValue === undefined) newValue = -decrement;
-  else if (typeof currentValue === 'number')
+  else if (
+    typeof currentValue === 'number' ||
+    getNumberFromString(currentValue) !== undefined
+  )
     newValue = Number(currentValue) - decrement;
   else throw new RespError('value is not an integer or out of range');
 
@@ -170,6 +209,7 @@ const commands: Record<string, CommandHandler> = {
   SET: handleSet,
   GET: handleGet,
   GETDEL: handleGetDel,
+  APPEND: handleAppend,
   DEL: handleDel,
   EXISTS: handleExists,
   FLUSHALL: handleFlushall,
