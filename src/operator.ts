@@ -52,7 +52,7 @@ function handleGetRange(store: IStore<string, TDataType>, args: string[]) {
   if (value === undefined) return '';
 
   // Convert value to string (handles both string and number types)
-  const str = typeof value === 'number' ? value.toString() : value;
+  const str = typeof value === 'number' ? value.toString() : String(value);
   const len = str.length;
 
   // Handle negative indices
