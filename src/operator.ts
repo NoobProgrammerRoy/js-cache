@@ -31,6 +31,41 @@ function handleGet(store: IStore<string, TDataType>, args: string[]) {
   return value;
 }
 
+function handleGetRange(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 3)
+    throw new RespError('wrong number of arguments for GETRANGE command');
+
+  const key = args[0];
+  const startStr = args[1];
+  const endStr = args[2];
+
+  const start = getNumberFromString(startStr);
+  if (start === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const end = getNumberFromString(endStr);
+  if (end === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const value = store.get(key);
+
+  if (value === undefined) return '';
+
+  // Convert value to string (handles both string and number types)
+  const str = typeof value === 'number' ? value.toString() : String(value);
+  const len = str.length;
+
+  // Handle negative indices
+  let startIdx = start < 0 ? Math.max(0, len + start) : Math.min(start, len);
+  let endIdx = end < 0 ? Math.max(-1, len + end) : Math.min(end, len - 1);
+
+  // If start > end, return empty string
+  if (startIdx > endIdx) return '';
+
+  // Extract substring (endIdx is inclusive, so we add 1)
+  return str.substring(startIdx, endIdx + 1);
+}
+
 function handleGetDel(store: IStore<string, TDataType>, args: string[]) {
   if (args.length < 1)
     throw new RespError('wrong number of arguments for GETDEL command');
@@ -208,6 +243,7 @@ type CommandHandler = (
 const commands: Record<string, CommandHandler> = {
   SET: handleSet,
   GET: handleGet,
+  GETRANGE: handleGetRange,
   GETDEL: handleGetDel,
   APPEND: handleAppend,
   DEL: handleDel,
