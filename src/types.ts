@@ -4,6 +4,7 @@ export type TRespType = TDataType | boolean | null | TRespType[];
 
 export type TWriteOperation =
   | 'SET'
+  | 'MSET'
   | 'DEL'
   | 'INCR'
   | 'INCRBY'
