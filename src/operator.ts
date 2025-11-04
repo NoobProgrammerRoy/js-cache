@@ -31,6 +31,29 @@ function handleGet(store: IStore<string, TDataType>, args: string[]) {
   return value;
 }
 
+function handleMget(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 1)
+    throw new RespError('wrong number of arguments for MGET command');
+
+  const result: TRespType[] = [];
+
+  for (const key of args) {
+    const value = store.get(key);
+
+    if (value === undefined) {
+      result.push(null);
+    } else if (typeof value === 'string') {
+      result.push(value);
+    } else if (typeof value === 'number') {
+      result.push(value.toString());
+    } else {
+      result.push(null);
+    }
+  }
+
+  return result;
+}
+
 function handleStrlen(store: IStore<string, TDataType>, args: string[]) {
   if (args.length < 1)
     throw new RespError('wrong number of arguments for STRLEN command');
@@ -307,6 +330,7 @@ type CommandHandler = (
 const commands: Record<string, CommandHandler> = {
   SET: handleSet,
   GET: handleGet,
+  MGET: handleMget,
   STRLEN: handleStrlen,
   GETRANGE: handleGetRange,
   SETRANGE: handleSetRange,
