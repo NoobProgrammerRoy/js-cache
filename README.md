@@ -55,7 +55,7 @@ I'm planning to use this project as a learning reference to implement more featu
 - ✅ Basic key-value operations
 - ✅ Append-Only File (AOF) persistence
 - ✅ TCP server with graceful shutdown
-- [ ] String commands
+- ✅ String commands
 - [ ] List commands
 - [ ] Hash commands
 - [ ] Set / Sorted set commands

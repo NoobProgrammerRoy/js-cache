@@ -38,6 +38,7 @@ async function initializeAOF(aof: AOF) {
 async function persistToAOF(operation: TWriteOperation, args: string[]) {
   if (operation === 'FLUSHALL') await aof.append(operation);
   else if (operation === 'SET') await aof.append(operation, ...args);
+  else if (operation === 'MSET') await aof.append(operation, ...args);
   else if (operation === 'DEL') await aof.append(operation, ...args);
   else if (operation === 'APPEND')
     await aof.append(operation, args[0], args[1]);

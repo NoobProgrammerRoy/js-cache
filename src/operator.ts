@@ -18,6 +18,24 @@ function handleSet(store: IStore<string, TDataType>, args: string[]) {
   return 'OK';
 }
 
+function handleMset(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2 || args.length % 2 !== 0)
+    throw new RespError('wrong number of arguments for MSET command');
+
+  for (let i = 0; i < args.length; i += 2) {
+    const key = args[i];
+    const value = args[i + 1];
+
+    if (getNumberFromString(value) !== undefined) {
+      store.set(key, Number(value));
+    } else {
+      store.set(key, value);
+    }
+  }
+
+  return 'OK';
+}
+
 function handleGet(store: IStore<string, TDataType>, args: string[]) {
   if (args.length < 1)
     throw new RespError('wrong number of arguments for GET command');
@@ -29,6 +47,52 @@ function handleGet(store: IStore<string, TDataType>, args: string[]) {
   if (typeof value === 'number') return value + '';
 
   return value;
+}
+
+function handleMget(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 1)
+    throw new RespError('wrong number of arguments for MGET command');
+
+  const result: TRespType[] = [];
+
+  for (const key of args) {
+    const value = store.get(key);
+
+    if (value === undefined) {
+      result.push(null);
+    } else if (typeof value === 'string') {
+      result.push(value);
+    } else if (typeof value === 'number') {
+      result.push(value.toString());
+    } else {
+      result.push(null);
+    }
+  }
+
+  return result;
+}
+
+function handleStrlen(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 1)
+    throw new RespError('wrong number of arguments for STRLEN command');
+
+  const key = args[0];
+  const value = store.get(key);
+
+  if (value === undefined) return 0;
+
+  if (typeof value === 'string') {
+    return value.length;
+  }
+
+  if (typeof value === 'number') {
+    return value.toString().length;
+  }
+
+  // Reject non-string values
+  throw new RespError(
+    'WRONGTYPE Operation against a key holding the wrong kind of value'
+  );
 }
 
 function handleGetRange(store: IStore<string, TDataType>, args: string[]) {
@@ -283,7 +347,10 @@ type CommandHandler = (
 
 const commands: Record<string, CommandHandler> = {
   SET: handleSet,
+  MSET: handleMset,
   GET: handleGet,
+  MGET: handleMget,
+  STRLEN: handleStrlen,
   GETRANGE: handleGetRange,
   SETRANGE: handleSetRange,
   GETDEL: handleGetDel,
