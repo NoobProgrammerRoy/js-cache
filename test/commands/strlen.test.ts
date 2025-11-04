@@ -59,7 +59,7 @@ describe('STRLEN command', () => {
   it('should work with unicode characters', () => {
     executeCommand('SET', ['unicode', 'Hello 世界']);
     const result = executeCommand('STRLEN', ['unicode']);
-    // Note: JavaScript counts UTF-16 code units, so Chinese characters count as 2 each
+    // Note: JavaScript's .length counts UTF-16 code units. These Chinese characters each count as 1 code unit.
     assert.strictEqual(result, 8);
   });
 
