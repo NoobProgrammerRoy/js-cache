@@ -56,9 +56,9 @@ describe('RENAME command', () => {
 
   it('should rename with empty string values', () => {
     executeCommand('SET', ['emptykey', '']);
-    const result = executeCommand('RENAME', ['emptykey', 'neweempty']);
+    const result = executeCommand('RENAME', ['emptykey', 'newempty']);
     assert.strictEqual(result, 'OK');
-    assert.strictEqual(executeCommand('GET', ['neweempty']), '');
+    assert.strictEqual(executeCommand('GET', ['newempty']), '');
   });
 
   it('should rename multiple keys sequentially', () => {
