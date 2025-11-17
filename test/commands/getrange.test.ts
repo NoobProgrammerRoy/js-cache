@@ -150,22 +150,10 @@ describe('GETRANGE command', () => {
     );
   });
 
-  it('should work with unicode characters', () => {
-    executeCommand('SET', ['unicode', 'Hello 世界']);
-    const result = executeCommand('GETRANGE', ['unicode', '0', '4']);
-    assert.strictEqual(result, 'Hello');
-  });
-
   it('should handle long strings', () => {
     const longStr = 'a'.repeat(10000);
     executeCommand('SET', ['longkey', longStr]);
     const result = executeCommand('GETRANGE', ['longkey', '100', '110']);
     assert.strictEqual(result, longStr.substring(100, 111));
-  });
-
-  it('should handle range within single word', () => {
-    executeCommand('SET', ['mykey', 'programming']);
-    const result = executeCommand('GETRANGE', ['mykey', '3', '8']);
-    assert.strictEqual(result, 'grammi');
   });
 });

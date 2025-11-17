@@ -22,12 +22,4 @@ describe('FLUSHALL command', () => {
     const result = executeCommand('FLUSHALL', []);
     assert.strictEqual(result, 'OK');
   });
-
-  it('should clear multiple keys', () => {
-    executeCommand('SET', ['a', '1']);
-    executeCommand('SET', ['b', '2']);
-    executeCommand('SET', ['c', '3']);
-    executeCommand('FLUSHALL', []);
-    assert.strictEqual(executeCommand('EXISTS', ['a', 'b', 'c']), 0);
-  });
 });

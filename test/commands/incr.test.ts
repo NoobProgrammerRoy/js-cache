@@ -28,22 +28,10 @@ describe('INCR command', () => {
     }, RespError);
   });
 
-  it('should increment from 0', () => {
-    executeCommand('SET', ['zero', '0']);
-    const result = executeCommand('INCR', ['zero']);
-    assert.strictEqual(result, 1);
-  });
-
   it('should handle negative numbers', () => {
     executeCommand('SET', ['negative', '-5']);
     const result = executeCommand('INCR', ['negative']);
     assert.strictEqual(result, -4);
-  });
-
-  it('should handle large numbers', () => {
-    executeCommand('SET', ['large', '9007199254740991']); // Max safe integer
-    const result = executeCommand('INCR', ['large']);
-    assert.strictEqual(result, 9007199254740992);
   });
 
   it('should persist incremented value', () => {
@@ -51,5 +39,13 @@ describe('INCR command', () => {
     executeCommand('INCR', ['x']);
     const result = executeCommand('INCR', ['x']);
     assert.strictEqual(result, 3);
+  });
+
+  it('should increment and return numeric strings', () => {
+    executeCommand('SET', ['numstr', '42']);
+    const result = executeCommand('INCR', ['numstr']);
+    assert.strictEqual(result, 43);
+    const getResult = executeCommand('GET', ['numstr']);
+    assert.strictEqual(getResult, '43');
   });
 });

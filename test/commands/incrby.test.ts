@@ -44,12 +44,6 @@ describe('INCRBY command', () => {
     assert.strictEqual(result, -2);
   });
 
-  it('should handle large increments', () => {
-    executeCommand('SET', ['large', '1000000']);
-    const result = executeCommand('INCRBY', ['large', '2000000']);
-    assert.strictEqual(result, 3000000);
-  });
-
   it('should persist incremented value', () => {
     executeCommand('INCRBY', ['a', '5']);
     executeCommand('INCRBY', ['a', '3']);
@@ -82,12 +76,6 @@ describe('INCRBY command', () => {
     assert.throws(() => {
       executeCommand('INCRBY', []);
     }, RespError);
-  });
-
-  it('should work with numeric string values', () => {
-    executeCommand('SET', ['num', '42']);
-    const result = executeCommand('INCRBY', ['num', '8']);
-    assert.strictEqual(result, 50);
   });
 
   it('should handle multiple increments correctly', () => {

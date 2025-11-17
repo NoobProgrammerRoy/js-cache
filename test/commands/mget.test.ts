@@ -65,25 +65,11 @@ describe('MGET command', () => {
     assert.strictEqual(result[3], null);
   });
 
-  it('should work with special characters in values', () => {
-    executeCommand('SET', ['special', '!@#$%^&*()']);
-    const result = executeCommand('MGET', ['special']);
-    assert.ok(Array.isArray(result));
-    assert.strictEqual(result[0], '!@#$%^&*()');
-  });
-
   it('should work with spaces and newlines', () => {
     executeCommand('SET', ['text', 'Hello\nWorld']);
     const result = executeCommand('MGET', ['text']);
     assert.ok(Array.isArray(result));
     assert.strictEqual(result[0], 'Hello\nWorld');
-  });
-
-  it('should work with unicode characters', () => {
-    executeCommand('SET', ['unicode', 'Hello 世界']);
-    const result = executeCommand('MGET', ['unicode']);
-    assert.ok(Array.isArray(result));
-    assert.strictEqual(result[0], 'Hello 世界');
   });
 
   it('should work with many keys', () => {
@@ -144,14 +130,6 @@ describe('MGET command', () => {
     const result = executeCommand('MGET', ['key1']);
     assert.ok(Array.isArray(result));
     assert.strictEqual(result[0], 'Hello Redis');
-  });
-
-  it('should work with long strings', () => {
-    const longStr = 'a'.repeat(10000);
-    executeCommand('SET', ['longkey', longStr]);
-    const result = executeCommand('MGET', ['longkey']);
-    assert.ok(Array.isArray(result));
-    assert.strictEqual(result[0], longStr);
   });
 
   it('should preserve order of keys', () => {

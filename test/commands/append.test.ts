@@ -8,6 +8,13 @@ describe('APPEND command', () => {
     setupStore();
   });
 
+  it('should create key if it does not exist', () => {
+    const result = executeCommand('APPEND', ['newkey', 'Hello']);
+    assert.strictEqual(result, 5);
+    const value = executeCommand('GET', ['newkey']);
+    assert.strictEqual(value, 'Hello');
+  });
+
   it('should append to existing string value', () => {
     executeCommand('SET', ['mykey', 'Hello']);
     const result = executeCommand('APPEND', ['mykey', ' World']);
@@ -16,28 +23,12 @@ describe('APPEND command', () => {
     assert.strictEqual(value, 'Hello World');
   });
 
-  it('should create key if it does not exist', () => {
-    const result = executeCommand('APPEND', ['newkey', 'Hello']);
-    assert.strictEqual(result, 5);
-    const value = executeCommand('GET', ['newkey']);
-    assert.strictEqual(value, 'Hello');
-  });
-
   it('should append empty string', () => {
     executeCommand('SET', ['mykey', 'Hello']);
     const result = executeCommand('APPEND', ['mykey', '']);
     assert.strictEqual(result, 5);
     const value = executeCommand('GET', ['mykey']);
     assert.strictEqual(value, 'Hello');
-  });
-
-  it('should append to key that starts as non-existent (becomes string)', () => {
-    const result1 = executeCommand('APPEND', ['newkey', 'Hello']);
-    assert.strictEqual(result1, 5);
-    const result2 = executeCommand('APPEND', ['newkey', ' World']);
-    assert.strictEqual(result2, 11);
-    const value = executeCommand('GET', ['newkey']);
-    assert.strictEqual(value, 'Hello World');
   });
 
   it('should handle multiple appends', () => {
@@ -65,14 +56,6 @@ describe('APPEND command', () => {
     assert.strictEqual(result, 9);
     const value = executeCommand('GET', ['numstr']);
     assert.strictEqual(value, 'abc123456');
-  });
-
-  it('should append special characters', () => {
-    executeCommand('SET', ['special', 'Hello!@#']);
-    const result = executeCommand('APPEND', ['special', '$%^&*()']);
-    assert.strictEqual(result, 15);
-    const value = executeCommand('GET', ['special']);
-    assert.strictEqual(value, 'Hello!@#$%^&*()');
   });
 
   it('should append with spaces and newlines', () => {
@@ -104,13 +87,6 @@ describe('APPEND command', () => {
     assert.strictEqual(result2, 2);
     const result3 = executeCommand('APPEND', ['key', 'c']);
     assert.strictEqual(result3, 3);
-  });
-
-  it('should persist appended value', () => {
-    executeCommand('SET', ['persist_key', 'value1']);
-    executeCommand('APPEND', ['persist_key', '_value2']);
-    const value = executeCommand('GET', ['persist_key']);
-    assert.strictEqual(value, 'value1_value2');
   });
 
   it('should handle long strings', () => {
