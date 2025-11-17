@@ -1,11 +1,15 @@
 import * as assert from 'node:assert';
-import { beforeEach, describe, it } from 'node:test';
+import { before, beforeEach, describe, it } from 'node:test';
 import { RespError } from '../../src/error.js';
-import { executeCommand, setupStore } from './test-utils.js';
+import { clearStore, executeCommand, setupStore } from './test-utils.js';
 
 describe('RENAME command', () => {
-  beforeEach(() => {
+  before(() => {
     setupStore();
+  });
+
+  beforeEach(() => {
+    clearStore();
   });
 
   it('should rename a key to a new key', () => {

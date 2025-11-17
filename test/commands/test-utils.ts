@@ -11,6 +11,10 @@ export function getStore() {
   return store;
 }
 
+export function clearStore() {
+  store.clear();
+}
+
 export function executeCommand(operation: string, args: string[]) {
   return getResponseFromOperation(store, operation, args);
 }
