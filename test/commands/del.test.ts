@@ -1,10 +1,14 @@
 import * as assert from 'node:assert';
-import { beforeEach, describe, it } from 'node:test';
-import { executeCommand, setupStore } from './test-utils.js';
+import { before, beforeEach, describe, it } from 'node:test';
+import { clearStore, executeCommand, setupStore } from './test-utils.js';
 
 describe('DEL command', () => {
-  beforeEach(() => {
+  before(() => {
     setupStore();
+  });
+
+  beforeEach(() => {
+    clearStore();
   });
 
   it('should delete a key and return 1', () => {

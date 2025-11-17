@@ -1,10 +1,14 @@
 import * as assert from 'node:assert';
-import { beforeEach, describe, it } from 'node:test';
-import { executeCommand, setupStore } from './test-utils.js';
+import { before, beforeEach, describe, it } from 'node:test';
+import { clearStore, executeCommand, setupStore } from './test-utils.js';
 
 describe('FLUSHALL command', () => {
-  beforeEach(() => {
+  before(() => {
     setupStore();
+  });
+
+  beforeEach(() => {
+    clearStore();
   });
 
   it('should clear all keys', () => {
