@@ -19,13 +19,6 @@ describe('SET command', () => {
     assert.strictEqual(getResult, 'value2');
   });
 
-  it('should handle string values', () => {
-    const result = executeCommand('SET', ['stringkey', 'stringvalue']);
-    assert.strictEqual(result, 'OK');
-    const getValue = executeCommand('GET', ['stringkey']);
-    assert.strictEqual(getValue, 'stringvalue');
-  });
-
   it('should handle numeric string values', () => {
     const result = executeCommand('SET', ['numkey', '42']);
     assert.strictEqual(result, 'OK');

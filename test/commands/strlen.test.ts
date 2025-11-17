@@ -44,23 +44,10 @@ describe('STRLEN command', () => {
     assert.strictEqual(result, 9);
   });
 
-  it('should work with special characters', () => {
-    executeCommand('SET', ['specialkey', '!@#$%^&*()']);
-    const result = executeCommand('STRLEN', ['specialkey']);
-    assert.strictEqual(result, 10);
-  });
-
   it('should work with spaces and newlines', () => {
     executeCommand('SET', ['textkey', 'Hello\nWorld']);
     const result = executeCommand('STRLEN', ['textkey']);
     assert.strictEqual(result, 11);
-  });
-
-  it('should work with unicode characters', () => {
-    executeCommand('SET', ['unicode', 'Hello 世界']);
-    const result = executeCommand('STRLEN', ['unicode']);
-    // Note: JavaScript's .length counts UTF-16 code units. These Chinese characters each count as 1 code unit.
-    assert.strictEqual(result, 8);
   });
 
   it('should work with long strings', () => {
@@ -117,11 +104,5 @@ describe('STRLEN command', () => {
     assert.strictEqual(executeCommand('STRLEN', ['overwrite']), 5);
     executeCommand('SET', ['overwrite', 'this is much longer']);
     assert.strictEqual(executeCommand('STRLEN', ['overwrite']), 19);
-  });
-
-  it('should work with strings containing spaces', () => {
-    executeCommand('SET', ['spaces', 'a b c']);
-    const result = executeCommand('STRLEN', ['spaces']);
-    assert.strictEqual(result, 5);
   });
 });

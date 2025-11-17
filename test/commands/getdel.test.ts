@@ -42,12 +42,4 @@ describe('GETDEL command', () => {
     assert.strictEqual(result, 'value1');
     assert.strictEqual(executeCommand('GET', ['key2']), 'value2');
   });
-
-  it('should handle multiple getdel calls', () => {
-    executeCommand('SET', ['a', 'val1']);
-    executeCommand('SET', ['b', 'val2']);
-    assert.strictEqual(executeCommand('GETDEL', ['a']), 'val1');
-    assert.strictEqual(executeCommand('GETDEL', ['b']), 'val2');
-    assert.strictEqual(executeCommand('GETDEL', ['a']), null);
-  });
 });

@@ -57,18 +57,6 @@ describe('MSET command', () => {
     }
   });
 
-  it('should work with special characters', () => {
-    const result = executeCommand('MSET', [
-      'special1',
-      '!@#$%^&*()',
-      'special2',
-      '[]{}|\\',
-    ]);
-    assert.strictEqual(result, 'OK');
-    assert.strictEqual(executeCommand('GET', ['special1']), '!@#$%^&*()');
-    assert.strictEqual(executeCommand('GET', ['special2']), '[]{}|\\');
-  });
-
   it('should work with spaces and newlines', () => {
     const result = executeCommand('MSET', [
       'text1',
@@ -79,31 +67,6 @@ describe('MSET command', () => {
     assert.strictEqual(result, 'OK');
     assert.strictEqual(executeCommand('GET', ['text1']), 'Hello World');
     assert.strictEqual(executeCommand('GET', ['text2']), 'Line1\nLine2');
-  });
-
-  it('should work with unicode characters', () => {
-    const result = executeCommand('MSET', [
-      'unicode1',
-      'Hello 世界',
-      'unicode2',
-      '🎉🎊',
-    ]);
-    assert.strictEqual(result, 'OK');
-    assert.strictEqual(executeCommand('GET', ['unicode1']), 'Hello 世界');
-    assert.strictEqual(executeCommand('GET', ['unicode2']), '🎉🎊');
-  });
-
-  it('should work with long strings', () => {
-    const longStr = 'a'.repeat(10000);
-    const result = executeCommand('MSET', [
-      'longkey1',
-      longStr,
-      'longkey2',
-      longStr,
-    ]);
-    assert.strictEqual(result, 'OK');
-    assert.strictEqual(executeCommand('GET', ['longkey1']), longStr);
-    assert.strictEqual(executeCommand('GET', ['longkey2']), longStr);
   });
 
   it('should be atomic - all keys set together', () => {

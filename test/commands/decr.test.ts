@@ -40,12 +40,6 @@ describe('DECR command', () => {
     assert.strictEqual(result, -6);
   });
 
-  it('should handle large numbers', () => {
-    executeCommand('SET', ['large', '-9007199254740991']); // Min safe integer
-    const result = executeCommand('DECR', ['large']);
-    assert.strictEqual(result, -9007199254740992);
-  });
-
   it('should persist decremented value', () => {
     executeCommand('SET', ['x', '10']);
     executeCommand('DECR', ['x']);

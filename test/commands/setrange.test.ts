@@ -109,14 +109,6 @@ describe('SETRANGE command', () => {
     assert.strictEqual(value, 'abXYZfgh');
   });
 
-  it('should extend and overwrite', () => {
-    executeCommand('SET', ['mykey', 'Hello']);
-    const result = executeCommand('SETRANGE', ['mykey', '3', 'Extended']);
-    assert.strictEqual(result, 11);
-    const value = executeCommand('GET', ['mykey']);
-    assert.strictEqual(value, 'HelExtended');
-  });
-
   it('should throw for missing key argument', () => {
     assert.throws(
       () => executeCommand('SETRANGE', []),

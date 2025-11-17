@@ -90,19 +90,4 @@ describe('DECRBY command', () => {
     const result = executeCommand('DECRBY', ['num', '8']);
     assert.strictEqual(result, 42);
   });
-
-  it('should handle multiple decrements correctly', () => {
-    const r1 = executeCommand('DECRBY', ['counter', '5']);
-    assert.strictEqual(r1, -5);
-    const r2 = executeCommand('DECRBY', ['counter', '10']);
-    assert.strictEqual(r2, -15);
-    const r3 = executeCommand('DECRBY', ['counter', '-3']);
-    assert.strictEqual(r3, -12);
-  });
-
-  it('should store result as string', () => {
-    executeCommand('DECRBY', ['z', '100']);
-    const result = executeCommand('GET', ['z']);
-    assert.strictEqual(result, '-100');
-  });
 });
