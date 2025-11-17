@@ -12,6 +12,7 @@ export type TWriteOperation =
   | 'DECRBY'
   | 'APPEND'
   | 'SETRANGE'
+  | 'RENAME'
   | 'FLUSHALL';
 
 export interface IStore<K, V> {

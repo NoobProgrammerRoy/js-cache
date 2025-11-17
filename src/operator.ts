@@ -244,6 +244,36 @@ function handlePing(_store: IStore<string, TDataType>, args: string[]) {
   return args.reduce((acc, curr, idx) => acc + (idx > 0 ? ' ' : '') + curr, '');
 }
 
+function handleEcho(_store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 1)
+    throw new RespError('wrong number of arguments for ECHO command');
+
+  return args[0];
+}
+
+function handleRename(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 2)
+    throw new RespError('wrong number of arguments for RENAME command');
+
+  const oldKey = args[0];
+  const newKey = args[1];
+
+  if (!store.has(oldKey)) {
+    throw new RespError('ERR no such key');
+  }
+
+  if (oldKey === newKey) {
+    return 'OK';
+  }
+
+  const value = store.get(oldKey);
+
+  store.set(newKey, value!);
+  store.delete(oldKey);
+
+  return 'OK';
+}
+
 function handleIncr(store: IStore<string, TDataType>, args: string[]) {
   if (args.length < 1)
     throw new RespError('wrong number of arguments for INCR command');
@@ -359,6 +389,8 @@ const commands: Record<string, CommandHandler> = {
   EXISTS: handleExists,
   FLUSHALL: handleFlushall,
   PING: handlePing,
+  ECHO: handleEcho,
+  RENAME: handleRename,
   INCR: handleIncr,
   INCRBY: handleIncrby,
   DECR: handleDecr,
