@@ -1,7 +1,7 @@
 import * as assert from 'node:assert';
 import { before, beforeEach, describe, it } from 'node:test';
-import { RespError } from '../../src/error.js';
-import { clearStore, executeCommand, setupStore } from './test-utils.js';
+import { RespError } from '../../../src/error.js';
+import { clearStore, executeCommand, setupStore } from '../../test-utils.js';
 
 describe('MSET command', () => {
   before(() => {

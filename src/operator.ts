@@ -1,6 +1,10 @@
 import { RespError } from './error.js';
 import { IStore, TDataType, TRespType } from './types.js';
-import { getNumberFromString } from './util.js';
+import {
+  getNumberFromString,
+  isStringDataType,
+  WRONGTYPE_ERROR,
+} from './util.js';
 
 function handleSet(store: IStore<string, TDataType>, args: string[]) {
   if (args.length < 2)
@@ -44,6 +48,11 @@ function handleGet(store: IStore<string, TDataType>, args: string[]) {
   const value = store.get(key);
 
   if (value === undefined) return null;
+
+  if (!isStringDataType(value)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
   if (typeof value === 'number') return value + '';
 
   return value;
@@ -60,12 +69,12 @@ function handleMget(store: IStore<string, TDataType>, args: string[]) {
 
     if (value === undefined) {
       result.push(null);
+    } else if (!isStringDataType(value)) {
+      result.push(null);
     } else if (typeof value === 'string') {
       result.push(value);
     } else if (typeof value === 'number') {
       result.push(value.toString());
-    } else {
-      result.push(null);
     }
   }
 
@@ -81,6 +90,10 @@ function handleStrlen(store: IStore<string, TDataType>, args: string[]) {
 
   if (value === undefined) return 0;
 
+  if (!isStringDataType(value)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
   if (typeof value === 'string') {
     return value.length;
   }
@@ -89,10 +102,7 @@ function handleStrlen(store: IStore<string, TDataType>, args: string[]) {
     return value.toString().length;
   }
 
-  // Reject non-string values
-  throw new RespError(
-    'WRONGTYPE Operation against a key holding the wrong kind of value'
-  );
+  throw new RespError(WRONGTYPE_ERROR);
 }
 
 function handleGetRange(store: IStore<string, TDataType>, args: string[]) {
@@ -114,6 +124,10 @@ function handleGetRange(store: IStore<string, TDataType>, args: string[]) {
   const value = store.get(key);
 
   if (value === undefined) return '';
+
+  if (!isStringDataType(value)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
 
   // Convert value to string (handles both string and number types)
   const str = typeof value === 'number' ? value.toString() : String(value);
@@ -146,6 +160,10 @@ function handleSetRange(store: IStore<string, TDataType>, args: string[]) {
     throw new RespError('value is not an integer or out of range');
 
   const currentValue = store.get(key);
+
+  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
 
   // Convert current value to string (or empty string if non-existent)
   let str = '';
@@ -180,15 +198,15 @@ function handleGetDel(store: IStore<string, TDataType>, args: string[]) {
 
   if (value === undefined) return null;
 
-  if (typeof value === 'string' || typeof value === 'number') {
-    store.delete(key);
-
-    if (typeof value === 'string') return value;
-
-    return value.toString();
+  if (!isStringDataType(value)) {
+    throw new RespError(WRONGTYPE_ERROR);
   }
 
-  return null;
+  store.delete(key);
+
+  if (typeof value === 'string') return value;
+
+  return value.toString();
 }
 
 function handleAppend(store: IStore<string, TDataType>, args: string[]) {
@@ -199,6 +217,10 @@ function handleAppend(store: IStore<string, TDataType>, args: string[]) {
   const valueToAppend = args[1];
   const currentValue = store.get(key);
 
+  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
   let newValue: string;
 
   if (currentValue === undefined) {
@@ -208,9 +230,7 @@ function handleAppend(store: IStore<string, TDataType>, args: string[]) {
   } else if (typeof currentValue === 'number') {
     newValue = currentValue.toString().concat(valueToAppend);
   } else {
-    throw new RespError(
-      'WRONGTYPE Operation against a key holding the wrong kind of value'
-    );
+    throw new RespError(WRONGTYPE_ERROR);
   }
 
   store.set(key, newValue);
@@ -280,6 +300,11 @@ function handleIncr(store: IStore<string, TDataType>, args: string[]) {
 
   const key = args[0];
   const currentValue = store.get(key);
+
+  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
   let newValue: number;
 
   if (currentValue === undefined) newValue = 1;
@@ -307,6 +332,11 @@ function handleIncrby(store: IStore<string, TDataType>, args: string[]) {
     throw new RespError('value is not an integer or out of range');
 
   const currentValue = store.get(key);
+
+  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
   let newValue: number;
 
   if (currentValue === undefined) newValue = increment;
@@ -328,6 +358,11 @@ function handleDecr(store: IStore<string, TDataType>, args: string[]) {
 
   const key = args[0];
   const currentValue = store.get(key);
+
+  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
   let newValue: number;
 
   if (currentValue === undefined) newValue = -1;
@@ -355,6 +390,11 @@ function handleDecrby(store: IStore<string, TDataType>, args: string[]) {
     throw new RespError('value is not an integer or out of range');
 
   const currentValue = store.get(key);
+
+  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
   let newValue: number;
 
   if (currentValue === undefined) newValue = -decrement;
