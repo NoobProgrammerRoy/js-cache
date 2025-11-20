@@ -50,6 +50,8 @@ async function persistToAOF(operation: TWriteOperation, args: string[]) {
     await aof.append(operation, args[0], args[1]);
   else if (operation === 'RENAME')
     await aof.append(operation, args[0], args[1]);
+  else if (operation === 'LPUSH') await aof.append(operation, ...args);
+  else if (operation === 'RPUSH') await aof.append(operation, ...args);
 }
 
 async function executeAndPersist(operation: string, args: string[]) {

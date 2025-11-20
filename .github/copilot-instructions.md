@@ -54,4 +54,4 @@
 - Use `assert` for validations and comparisons
 - Use `async/await` for testing asynchronous code
 - Use `npm test` to run all tests
-- Use `node --test --import tsx test/commands/**/<command>.test.ts` to run a specific test for a given command
+- Use `node --test --import tsx test/commands/<data-type>/<command>.test.ts` to run a specific test for a given command

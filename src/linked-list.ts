@@ -1,13 +1,13 @@
-import { INode } from './types.js';
+import { IList, INode } from './types.js';
 
-class LinkedList<T> {
-  private head: INode<T> | null = null;
-  private tail: INode<T> | null = null;
+class LinkedList implements IList<string> {
+  private head: INode<string> | null = null;
+  private tail: INode<string> | null = null;
   private size: number = 0;
 
   // Add element to the front of the list
-  unshift(value: T): number {
-    const newNode: INode<T> = { value, next: this.head, prev: null };
+  unshift(value: string) {
+    const newNode: INode<string> = { value, next: this.head, prev: null };
 
     if (this.head !== null) {
       this.head.prev = newNode;
@@ -22,8 +22,8 @@ class LinkedList<T> {
   }
 
   // Add element to the end of the list
-  push(value: T): number {
-    const newNode: INode<T> = { value, next: null, prev: this.tail };
+  push(value: string) {
+    const newNode: INode<string> = { value, next: null, prev: this.tail };
 
     if (this.tail !== null) {
       this.tail.next = newNode;
@@ -37,7 +37,7 @@ class LinkedList<T> {
   }
 
   // Remove and return element from the front
-  shift(): T | undefined {
+  shift() {
     if (this.head === null) return undefined;
 
     const value = this.head.value;
@@ -54,7 +54,7 @@ class LinkedList<T> {
   }
 
   // Remove and return element from the end
-  pop(): T | undefined {
+  pop() {
     if (this.tail === null) return undefined;
 
     const value = this.tail.value;
@@ -71,10 +71,10 @@ class LinkedList<T> {
   }
 
   //  Get element at index
-  at(index: number): T | undefined {
+  at(index: number) {
     if (index < 0 || index >= this.size) return undefined;
 
-    let current: INode<T> | null;
+    let current: INode<string> | null;
     if (index < this.size / 2) {
       current = this.head;
       for (let i = 0; i < index; i++) {
@@ -91,8 +91,8 @@ class LinkedList<T> {
   }
 
   // Get slice of elements [start, end]
-  slice(start: number, end: number): T[] {
-    const result: T[] = [];
+  slice(start: number, end: number) {
+    const result: string[] = [];
 
     if (this.size === 0) return result;
 
@@ -104,7 +104,7 @@ class LinkedList<T> {
 
     if (normalizedStart > normalizedEnd) return result;
 
-    let current: INode<T> | null;
+    let current: INode<string> | null;
     if (normalizedStart < this.size / 2) {
       current = this.head;
       for (let i = 0; i < normalizedStart; i++) {

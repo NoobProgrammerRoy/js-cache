@@ -1,7 +1,9 @@
 import { RespError } from './error.js';
-import { IStore, TDataType, TRespType } from './types.js';
+import LinkedList from './linked-list.js';
+import { IList, IStore, TDataType, TRespType } from './types.js';
 import {
   getNumberFromString,
+  isListDataType,
   isStringDataType,
   WRONGTYPE_ERROR,
 } from './util.js';
@@ -410,6 +412,96 @@ function handleDecrby(store: IStore<string, TDataType>, args: string[]) {
   return newValue;
 }
 
+function handleLpush(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for LPUSH command');
+
+  const key = args[0];
+  const values = args.slice(1);
+
+  const currentValue = store.get(key);
+
+  if (currentValue !== undefined && !isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  let list: IList<string>;
+  if (currentValue === undefined) {
+    list = new LinkedList();
+  } else {
+    list = currentValue;
+  }
+
+  for (const value of values) {
+    list.unshift(value);
+  }
+
+  store.set(key, list);
+
+  return list.length();
+}
+
+function handleRpush(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for RPUSH command');
+
+  const key = args[0];
+  const values = args.slice(1);
+
+  const currentValue = store.get(key);
+
+  if (currentValue !== undefined && !isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  let list: IList<string>;
+  if (currentValue === undefined) {
+    list = new LinkedList();
+  } else {
+    list = currentValue;
+  }
+
+  for (const value of values) {
+    list.push(value);
+  }
+
+  store.set(key, list);
+
+  return list.length();
+}
+
+function handleLrange(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 3)
+    throw new RespError('wrong number of arguments for LRANGE command');
+
+  const key = args[0];
+  const startStr = args[1];
+  const stopStr = args[2];
+
+  const start = getNumberFromString(startStr);
+  if (start === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const stop = getNumberFromString(stopStr);
+  if (stop === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const currentValue = store.get(key);
+
+  // Key doesn't exist - return empty array
+  if (currentValue === undefined) {
+    return [];
+  }
+
+  // Key is not a list - throw WRONGTYPE error
+  if (!isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  const list = currentValue as IList<string>;
+  return list.slice(start, stop);
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -435,6 +527,9 @@ const commands: Record<string, CommandHandler> = {
   INCRBY: handleIncrby,
   DECR: handleDecr,
   DECRBY: handleDecrby,
+  LPUSH: handleLpush,
+  RPUSH: handleRpush,
+  LRANGE: handleLrange,
 };
 
 export function getResponseFromOperation(
