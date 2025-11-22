@@ -106,4 +106,52 @@ describe('LPOP command', () => {
     const result = executeCommand('LPOP', ['mylist']);
     assert.strictEqual(result, null);
   });
+
+  it('should delete key when single LPOP empties the list', () => {
+    executeCommand('RPUSH', ['mylist', 'one']);
+    executeCommand('LPOP', ['mylist']);
+    const exists = executeCommand('EXISTS', ['mylist']);
+    assert.strictEqual(exists, 0);
+  });
+
+  it('should delete key when multiple LPOP operations empty the list', () => {
+    executeCommand('RPUSH', ['mylist', 'one', 'two', 'three']);
+    executeCommand('LPOP', ['mylist']);
+    executeCommand('LPOP', ['mylist']);
+    executeCommand('LPOP', ['mylist']);
+    const exists = executeCommand('EXISTS', ['mylist']);
+    assert.strictEqual(exists, 0);
+  });
+
+  it('should delete key when LPOP with count empties the list', () => {
+    executeCommand('RPUSH', ['mylist', 'one', 'two', 'three']);
+    executeCommand('LPOP', ['mylist', '3']);
+    const exists = executeCommand('EXISTS', ['mylist']);
+    assert.strictEqual(exists, 0);
+  });
+
+  it('should delete key when LPOP with count greater than list length empties the list', () => {
+    executeCommand('RPUSH', ['mylist', 'one', 'two']);
+    executeCommand('LPOP', ['mylist', '10']);
+    const exists = executeCommand('EXISTS', ['mylist']);
+    assert.strictEqual(exists, 0);
+  });
+
+  it('should not delete key when LPOP leaves elements in list', () => {
+    executeCommand('RPUSH', ['mylist', 'one', 'two', 'three']);
+    executeCommand('LPOP', ['mylist']);
+    const exists = executeCommand('EXISTS', ['mylist']);
+    assert.strictEqual(exists, 1);
+    const remaining = executeCommand('LRANGE', ['mylist', '0', '-1']);
+    assert.deepStrictEqual(remaining, ['two', 'three']);
+  });
+
+  it('should not delete key when LPOP with count leaves elements in list', () => {
+    executeCommand('RPUSH', ['mylist', 'one', 'two', 'three', 'four']);
+    executeCommand('LPOP', ['mylist', '2']);
+    const exists = executeCommand('EXISTS', ['mylist']);
+    assert.strictEqual(exists, 1);
+    const remaining = executeCommand('LRANGE', ['mylist', '0', '-1']);
+    assert.deepStrictEqual(remaining, ['three', 'four']);
+  });
 });

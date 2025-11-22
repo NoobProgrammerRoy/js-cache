@@ -153,4 +153,60 @@ describe('RPOP command', () => {
     const remaining = executeCommand('LRANGE', ['mylist', '0', '-1']);
     assert.deepStrictEqual(remaining, ['c', 'd']);
   });
+
+  it('should delete key when single RPOP empties the list', () => {
+    executeCommand('RPUSH', ['mylist', 'one']);
+    executeCommand('RPOP', ['mylist']);
+    const exists = executeCommand('EXISTS', ['mylist']);
+    assert.strictEqual(exists, 0);
+  });
+
+  it('should delete key when multiple RPOP operations empty the list', () => {
+    executeCommand('RPUSH', ['mylist', 'one', 'two', 'three']);
+    executeCommand('RPOP', ['mylist']);
+    executeCommand('RPOP', ['mylist']);
+    executeCommand('RPOP', ['mylist']);
+    const exists = executeCommand('EXISTS', ['mylist']);
+    assert.strictEqual(exists, 0);
+  });
+
+  it('should delete key when RPOP with count empties the list', () => {
+    executeCommand('RPUSH', ['mylist', 'one', 'two', 'three']);
+    executeCommand('RPOP', ['mylist', '3']);
+    const exists = executeCommand('EXISTS', ['mylist']);
+    assert.strictEqual(exists, 0);
+  });
+
+  it('should delete key when RPOP with count greater than list length empties the list', () => {
+    executeCommand('RPUSH', ['mylist', 'one', 'two']);
+    executeCommand('RPOP', ['mylist', '10']);
+    const exists = executeCommand('EXISTS', ['mylist']);
+    assert.strictEqual(exists, 0);
+  });
+
+  it('should not delete key when RPOP leaves elements in list', () => {
+    executeCommand('RPUSH', ['mylist', 'one', 'two', 'three']);
+    executeCommand('RPOP', ['mylist']);
+    const exists = executeCommand('EXISTS', ['mylist']);
+    assert.strictEqual(exists, 1);
+    const remaining = executeCommand('LRANGE', ['mylist', '0', '-1']);
+    assert.deepStrictEqual(remaining, ['one', 'two']);
+  });
+
+  it('should not delete key when RPOP with count leaves elements in list', () => {
+    executeCommand('RPUSH', ['mylist', 'one', 'two', 'three', 'four']);
+    executeCommand('RPOP', ['mylist', '2']);
+    const exists = executeCommand('EXISTS', ['mylist']);
+    assert.strictEqual(exists, 1);
+    const remaining = executeCommand('LRANGE', ['mylist', '0', '-1']);
+    assert.deepStrictEqual(remaining, ['one', 'two']);
+  });
+
+  it('should delete key when combined LPOP and RPOP operations empty the list', () => {
+    executeCommand('RPUSH', ['mylist', 'a', 'b', 'c', 'd']);
+    executeCommand('LPOP', ['mylist', '2']);
+    executeCommand('RPOP', ['mylist', '2']);
+    const exists = executeCommand('EXISTS', ['mylist']);
+    assert.strictEqual(exists, 0);
+  });
 });

@@ -535,7 +535,11 @@ function handleLpop(store: IStore<string, TDataType>, args: string[]) {
   const list = currentValue;
 
   if (countStr === undefined) {
-    return list.shift() ?? null;
+    const result = list.shift() ?? null;
+    if (list.length() === 0) {
+      store.delete(key);
+    }
+    return result;
   }
 
   const count = getIntFromString(countStr);
@@ -549,6 +553,10 @@ function handleLpop(store: IStore<string, TDataType>, args: string[]) {
     const value = list.shift();
     if (value === undefined) break;
     result.push(value);
+  }
+
+  if (list.length() === 0) {
+    store.delete(key);
   }
 
   return result;
@@ -574,7 +582,11 @@ function handleRpop(store: IStore<string, TDataType>, args: string[]) {
   const list = currentValue;
 
   if (countStr === undefined) {
-    return list.pop() ?? null;
+    const result = list.pop() ?? null;
+    if (list.length() === 0) {
+      store.delete(key);
+    }
+    return result;
   }
 
   const count = getIntFromString(countStr);
@@ -588,6 +600,10 @@ function handleRpop(store: IStore<string, TDataType>, args: string[]) {
     const value = list.pop();
     if (value === undefined) break;
     result.push(value);
+  }
+
+  if (list.length() === 0) {
+    store.delete(key);
   }
 
   return result;
