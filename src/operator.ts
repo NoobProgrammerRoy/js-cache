@@ -497,6 +497,24 @@ function handleLrange(store: IStore<string, TDataType>, args: string[]) {
   return list.slice(start, stop);
 }
 
+function handleLlen(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 1)
+    throw new RespError('wrong number of arguments for LLEN command');
+
+  const key = args[0];
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    return 0;
+  }
+
+  if (!isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  return currentValue.length();
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -525,6 +543,7 @@ const commands: Record<string, CommandHandler> = {
   LPUSH: handleLpush,
   RPUSH: handleRpush,
   LRANGE: handleLrange,
+  LLEN: handleLlen,
 };
 
 export function getResponseFromOperation(
