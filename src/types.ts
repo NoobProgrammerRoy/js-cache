@@ -49,6 +49,7 @@ export interface IList<T> {
   at: (index: number) => T | undefined;
   set: (index: number, value: T) => void;
   slice: (start: number, end: number) => T[];
+  trim: (start: number, end: number) => void;
   length: () => number;
   clear: () => void;
 }

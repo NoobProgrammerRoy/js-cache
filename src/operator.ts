@@ -689,6 +689,50 @@ function handleLset(store: IStore<string, TDataType>, args: string[]) {
   return 'OK';
 }
 
+function handleLtrim(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 3)
+    throw new RespError('wrong number of arguments for LTRIM command');
+
+  const key = args[0];
+  const startStr = args[1];
+  const stopStr = args[2];
+
+  const start = getIntFromString(startStr);
+  if (start === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const stop = getIntFromString(stopStr);
+  if (stop === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const currentValue = store.get(key);
+
+  // If key doesn't exist, it's a no-op
+  if (currentValue === undefined) {
+    return 'OK';
+  }
+
+  if (!isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  const list = currentValue;
+  const size = list.length();
+
+  let normalizedStart =
+    start < 0 ? Math.max(0, size + start) : Math.min(start, size);
+  let normalizedEnd =
+    stop < 0 ? Math.max(-1, size + stop) : Math.min(stop, size - 1);
+
+  list.trim(normalizedStart, normalizedEnd);
+
+  if (list.length() === 0) {
+    store.delete(key);
+  }
+
+  return 'OK';
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -722,6 +766,7 @@ const commands: Record<string, CommandHandler> = {
   RPOP: handleRpop,
   LINDEX: handleLindex,
   LSET: handleLset,
+  LTRIM: handleLtrim,
 };
 
 export function getResponseFromOperation(

@@ -147,6 +147,67 @@ class LinkedList implements IList<string> {
     return result;
   }
 
+  // Trim the list to only contain elements in the specified range [start, end]
+  // Note: start and end should be normalized (non-negative) indices before calling this method
+  trim(start: number, end: number) {
+    if (this.size === 0) return;
+
+    // If start > end, clear the list
+    if (start > end) {
+      this.clear();
+      return;
+    }
+
+    // Find the start node
+    let startNode: INode<string> | null = null;
+    if (start < this.size / 2) {
+      startNode = this.head;
+      for (let i = 0; i < start; i++) {
+        startNode = startNode!.next;
+      }
+    } else {
+      startNode = this.tail;
+      for (let i = this.size - 1; i > start; i--) {
+        startNode = startNode!.prev;
+      }
+    }
+
+    // Find the end node
+    let endNode: INode<string> | null = null;
+    if (end < this.size / 2) {
+      endNode = this.head;
+      for (let i = 0; i < end; i++) {
+        endNode = endNode!.next;
+      }
+    } else {
+      endNode = this.tail;
+      for (let i = this.size - 1; i > end; i--) {
+        endNode = endNode!.prev;
+      }
+    }
+
+    // Update head and tail
+    if (startNode) {
+      startNode.prev = null;
+      this.head = startNode;
+    }
+
+    if (endNode) {
+      endNode.next = null;
+      this.tail = endNode;
+    }
+
+    // Recalculate size
+    let newSize = 0;
+    let current = this.head;
+    while (current !== null) {
+      newSize++;
+      current = current.next;
+    }
+
+    this.size = newSize;
+  }
+
   // Get the length of the list
   length(): number {
     return this.size;
