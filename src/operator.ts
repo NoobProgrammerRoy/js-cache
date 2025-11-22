@@ -785,6 +785,24 @@ function handleSmembers(store: IStore<string, TDataType>, args: string[]) {
   return Array.from(currentValue);
 }
 
+function handleScard(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 1)
+    throw new RespError('wrong number of arguments for SCARD command');
+
+  const key = args[0];
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    return 0;
+  }
+
+  if (!isSetDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  return currentValue.size;
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -821,6 +839,7 @@ const commands: Record<string, CommandHandler> = {
   LTRIM: handleLtrim,
   SADD: handleSadd,
   SMEMBERS: handleSmembers,
+  SCARD: handleScard,
 };
 
 export function getResponseFromOperation(
