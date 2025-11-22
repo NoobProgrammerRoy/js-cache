@@ -1,5 +1,5 @@
-import MapStore from '../../src/map-store.js';
-import { getResponseFromOperation } from '../../src/operator.js';
+import MapStore from '../src/map-store.js';
+import { getResponseFromOperation } from '../src/operator.js';
 
 let store: MapStore;
 

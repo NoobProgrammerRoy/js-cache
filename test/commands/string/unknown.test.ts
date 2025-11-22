@@ -1,6 +1,6 @@
 import * as assert from 'node:assert';
 import { describe, it } from 'node:test';
-import { executeCommand } from './test-utils.js';
+import { executeCommand } from '../../test-utils.js';
 
 describe('Unknown command', () => {
   it('should return unknown command message', () => {

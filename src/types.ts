@@ -1,6 +1,6 @@
-export type TDataType = string | number;
+export type TDataType = string | number | IList<string>;
 
-export type TRespType = TDataType | boolean | null | TRespType[];
+export type TRespType = string | number | boolean | null | TRespType[];
 
 export type TWriteOperation =
   | 'SET'
@@ -13,6 +13,8 @@ export type TWriteOperation =
   | 'APPEND'
   | 'SETRANGE'
   | 'RENAME'
+  | 'LPUSH'
+  | 'RPUSH'
   | 'FLUSHALL';
 
 export interface IStore<K, V> {
@@ -31,4 +33,21 @@ export interface IAOF {
 export interface IAOFConfig {
   filename: string;
   isEnabled: boolean;
+}
+
+export interface INode<T> {
+  value: T;
+  next: INode<T> | null;
+  prev: INode<T> | null;
+}
+
+export interface IList<T> {
+  unshift: (value: T) => number;
+  push: (value: T) => number;
+  shift: () => T | undefined;
+  pop: () => T | undefined;
+  at: (index: number) => T | undefined;
+  slice: (start: number, end: number) => T[];
+  length: () => number;
+  clear: () => void;
 }

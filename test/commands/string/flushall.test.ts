@@ -1,6 +1,6 @@
 import * as assert from 'node:assert';
 import { before, beforeEach, describe, it } from 'node:test';
-import { clearStore, executeCommand, setupStore } from './test-utils.js';
+import { clearStore, executeCommand, setupStore } from '../../test-utils.js';
 
 describe('FLUSHALL command', () => {
   before(() => {

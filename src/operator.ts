@@ -1,6 +1,13 @@
 import { RespError } from './error.js';
-import { IStore, TDataType, TRespType } from './types.js';
-import { getNumberFromString } from './util.js';
+import LinkedList from './linked-list.js';
+import { IList, IStore, TDataType, TRespType } from './types.js';
+import {
+  getIntFromString,
+  getNumberFromString,
+  isListDataType,
+  isStringDataType,
+  WRONGTYPE_ERROR,
+} from './util.js';
 
 function handleSet(store: IStore<string, TDataType>, args: string[]) {
   if (args.length < 2)
@@ -44,6 +51,11 @@ function handleGet(store: IStore<string, TDataType>, args: string[]) {
   const value = store.get(key);
 
   if (value === undefined) return null;
+
+  if (!isStringDataType(value)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
   if (typeof value === 'number') return value + '';
 
   return value;
@@ -60,12 +72,12 @@ function handleMget(store: IStore<string, TDataType>, args: string[]) {
 
     if (value === undefined) {
       result.push(null);
+    } else if (!isStringDataType(value)) {
+      result.push(null);
     } else if (typeof value === 'string') {
       result.push(value);
     } else if (typeof value === 'number') {
       result.push(value.toString());
-    } else {
-      result.push(null);
     }
   }
 
@@ -81,18 +93,15 @@ function handleStrlen(store: IStore<string, TDataType>, args: string[]) {
 
   if (value === undefined) return 0;
 
+  if (!isStringDataType(value)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
   if (typeof value === 'string') {
     return value.length;
   }
 
-  if (typeof value === 'number') {
-    return value.toString().length;
-  }
-
-  // Reject non-string values
-  throw new RespError(
-    'WRONGTYPE Operation against a key holding the wrong kind of value'
-  );
+  return value.toString().length;
 }
 
 function handleGetRange(store: IStore<string, TDataType>, args: string[]) {
@@ -114,6 +123,10 @@ function handleGetRange(store: IStore<string, TDataType>, args: string[]) {
   const value = store.get(key);
 
   if (value === undefined) return '';
+
+  if (!isStringDataType(value)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
 
   // Convert value to string (handles both string and number types)
   const str = typeof value === 'number' ? value.toString() : String(value);
@@ -146,6 +159,10 @@ function handleSetRange(store: IStore<string, TDataType>, args: string[]) {
     throw new RespError('value is not an integer or out of range');
 
   const currentValue = store.get(key);
+
+  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
 
   // Convert current value to string (or empty string if non-existent)
   let str = '';
@@ -180,15 +197,15 @@ function handleGetDel(store: IStore<string, TDataType>, args: string[]) {
 
   if (value === undefined) return null;
 
-  if (typeof value === 'string' || typeof value === 'number') {
-    store.delete(key);
-
-    if (typeof value === 'string') return value;
-
-    return value.toString();
+  if (!isStringDataType(value)) {
+    throw new RespError(WRONGTYPE_ERROR);
   }
 
-  return null;
+  store.delete(key);
+
+  if (typeof value === 'string') return value;
+
+  return value.toString();
 }
 
 function handleAppend(store: IStore<string, TDataType>, args: string[]) {
@@ -199,18 +216,18 @@ function handleAppend(store: IStore<string, TDataType>, args: string[]) {
   const valueToAppend = args[1];
   const currentValue = store.get(key);
 
+  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
   let newValue: string;
 
   if (currentValue === undefined) {
     newValue = valueToAppend;
   } else if (typeof currentValue === 'string') {
     newValue = currentValue.concat(valueToAppend);
-  } else if (typeof currentValue === 'number') {
-    newValue = currentValue.toString().concat(valueToAppend);
   } else {
-    throw new RespError(
-      'WRONGTYPE Operation against a key holding the wrong kind of value'
-    );
+    newValue = currentValue.toString().concat(valueToAppend);
   }
 
   store.set(key, newValue);
@@ -280,6 +297,11 @@ function handleIncr(store: IStore<string, TDataType>, args: string[]) {
 
   const key = args[0];
   const currentValue = store.get(key);
+
+  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
   let newValue: number;
 
   if (currentValue === undefined) newValue = 1;
@@ -307,6 +329,11 @@ function handleIncrby(store: IStore<string, TDataType>, args: string[]) {
     throw new RespError('value is not an integer or out of range');
 
   const currentValue = store.get(key);
+
+  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
   let newValue: number;
 
   if (currentValue === undefined) newValue = increment;
@@ -328,6 +355,11 @@ function handleDecr(store: IStore<string, TDataType>, args: string[]) {
 
   const key = args[0];
   const currentValue = store.get(key);
+
+  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
   let newValue: number;
 
   if (currentValue === undefined) newValue = -1;
@@ -355,6 +387,11 @@ function handleDecrby(store: IStore<string, TDataType>, args: string[]) {
     throw new RespError('value is not an integer or out of range');
 
   const currentValue = store.get(key);
+
+  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
   let newValue: number;
 
   if (currentValue === undefined) newValue = -decrement;
@@ -368,6 +405,96 @@ function handleDecrby(store: IStore<string, TDataType>, args: string[]) {
   store.set(key, newValue);
 
   return newValue;
+}
+
+function handleLpush(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for LPUSH command');
+
+  const key = args[0];
+  const values = args.slice(1);
+
+  const currentValue = store.get(key);
+
+  if (currentValue !== undefined && !isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  let list: IList<string>;
+  if (currentValue === undefined) {
+    list = new LinkedList();
+  } else {
+    list = currentValue;
+  }
+
+  for (const value of values) {
+    list.unshift(value);
+  }
+
+  store.set(key, list);
+
+  return list.length();
+}
+
+function handleRpush(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for RPUSH command');
+
+  const key = args[0];
+  const values = args.slice(1);
+
+  const currentValue = store.get(key);
+
+  if (currentValue !== undefined && !isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  let list: IList<string>;
+  if (currentValue === undefined) {
+    list = new LinkedList();
+  } else {
+    list = currentValue;
+  }
+
+  for (const value of values) {
+    list.push(value);
+  }
+
+  store.set(key, list);
+
+  return list.length();
+}
+
+function handleLrange(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 3)
+    throw new RespError('wrong number of arguments for LRANGE command');
+
+  const key = args[0];
+  const startStr = args[1];
+  const stopStr = args[2];
+
+  const start = getIntFromString(startStr);
+  if (start === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const stop = getIntFromString(stopStr);
+  if (stop === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const currentValue = store.get(key);
+
+  // Key doesn't exist - return empty array
+  if (currentValue === undefined) {
+    return [];
+  }
+
+  // Key is not a list - throw WRONGTYPE error
+  if (!isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  const list = currentValue as IList<string>;
+  return list.slice(start, stop);
 }
 
 type CommandHandler = (
@@ -395,6 +522,9 @@ const commands: Record<string, CommandHandler> = {
   INCRBY: handleIncrby,
   DECR: handleDecr,
   DECRBY: handleDecrby,
+  LPUSH: handleLpush,
+  RPUSH: handleRpush,
+  LRANGE: handleLrange,
 };
 
 export function getResponseFromOperation(
