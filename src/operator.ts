@@ -632,6 +632,47 @@ function handleLindex(store: IStore<string, TDataType>, args: string[]) {
   return value ?? null;
 }
 
+function handleLset(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 3)
+    throw new RespError('wrong number of arguments for LSET command');
+
+  const key = args[0];
+  const indexStr = args[1];
+  const newValue = args[2];
+
+  const index = getIntFromString(indexStr);
+  if (index === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    throw new RespError('no such key');
+  }
+
+  if (!isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  const list = currentValue;
+  const length = list.length();
+
+  // Handle negative indices
+  let normalizedIndex = index;
+  if (index < 0) {
+    normalizedIndex = length + index;
+  }
+
+  // Check if index is out of range
+  if (normalizedIndex < 0 || normalizedIndex >= length) {
+    throw new RespError('index out of range');
+  }
+
+  list.set(normalizedIndex, newValue);
+
+  return 'OK';
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -664,6 +705,7 @@ const commands: Record<string, CommandHandler> = {
   LPOP: handleLpop,
   RPOP: handleRpop,
   LINDEX: handleLindex,
+  LSET: handleLset,
 };
 
 export function getResponseFromOperation(

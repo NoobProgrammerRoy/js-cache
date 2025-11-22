@@ -47,6 +47,7 @@ export interface IList<T> {
   shift: () => T | undefined;
   pop: () => T | undefined;
   at: (index: number) => T | undefined;
+  set: (index: number, value: T) => void;
   slice: (start: number, end: number) => T[];
   length: () => number;
   clear: () => void;

@@ -90,6 +90,28 @@ class LinkedList implements IList<string> {
     return current ? current.value : undefined;
   }
 
+  // Set element at index
+  set(index: number, value: string): void {
+    if (index < 0 || index >= this.size) return;
+
+    let current: INode<string> | null;
+    if (index < this.size / 2) {
+      current = this.head;
+      for (let i = 0; i < index; i++) {
+        current = current!.next;
+      }
+    } else {
+      current = this.tail;
+      for (let i = this.size - 1; i > index; i--) {
+        current = current!.prev;
+      }
+    }
+
+    if (current) {
+      current.value = value;
+    }
+  }
+
   // Get slice of elements [start, end]
   slice(start: number, end: number) {
     const result: string[] = [];
