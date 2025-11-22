@@ -90,6 +90,28 @@ class LinkedList implements IList<string> {
     return current ? current.value : undefined;
   }
 
+  // Set element at index
+  set(index: number, value: string): void {
+    if (index < 0 || index >= this.size) return;
+
+    let current: INode<string> | null;
+    if (index < this.size / 2) {
+      current = this.head;
+      for (let i = 0; i < index; i++) {
+        current = current!.next;
+      }
+    } else {
+      current = this.tail;
+      for (let i = this.size - 1; i > index; i--) {
+        current = current!.prev;
+      }
+    }
+
+    if (current) {
+      current.value = value;
+    }
+  }
+
   // Get slice of elements [start, end]
   slice(start: number, end: number) {
     const result: string[] = [];
@@ -123,6 +145,60 @@ class LinkedList implements IList<string> {
     }
 
     return result;
+  }
+
+  // Trim the list to only contain elements in the specified range [start, end]
+  // Note: start and end should be normalized (non-negative) indices before calling this method
+  trim(start: number, end: number) {
+    if (this.size === 0) return;
+
+    // If start > end, clear the list
+    if (start > end) {
+      this.clear();
+      return;
+    }
+
+    // Find the start node
+    let startNode: INode<string> | null = null;
+    if (start < this.size / 2) {
+      startNode = this.head;
+      for (let i = 0; i < start; i++) {
+        startNode = startNode!.next;
+      }
+    } else {
+      startNode = this.tail;
+      for (let i = this.size - 1; i > start; i--) {
+        startNode = startNode!.prev;
+      }
+    }
+
+    // Find the end node
+    let endNode: INode<string> | null = null;
+    if (end < this.size / 2) {
+      endNode = this.head;
+      for (let i = 0; i < end; i++) {
+        endNode = endNode!.next;
+      }
+    } else {
+      endNode = this.tail;
+      for (let i = this.size - 1; i > end; i--) {
+        endNode = endNode!.prev;
+      }
+    }
+
+    // Update head and tail
+    if (startNode) {
+      startNode.prev = null;
+      this.head = startNode;
+    }
+
+    if (endNode) {
+      endNode.next = null;
+      this.tail = endNode;
+    }
+
+    // Recalculate size efficiently
+    this.size = end - start + 1;
   }
 
   // Get the length of the list

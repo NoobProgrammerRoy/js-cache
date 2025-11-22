@@ -497,6 +497,242 @@ function handleLrange(store: IStore<string, TDataType>, args: string[]) {
   return list.slice(start, stop);
 }
 
+function handleLlen(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 1)
+    throw new RespError('wrong number of arguments for LLEN command');
+
+  const key = args[0];
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    return 0;
+  }
+
+  if (!isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  return currentValue.length();
+}
+
+function handleLpop(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 1)
+    throw new RespError('wrong number of arguments for LPOP command');
+
+  const key = args[0];
+  const countStr = args[1];
+
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    return null;
+  }
+
+  if (!isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  const list = currentValue;
+
+  if (countStr === undefined) {
+    const result = list.shift() ?? null;
+    if (list.length() === 0) {
+      store.delete(key);
+    }
+    return result;
+  }
+
+  const count = getIntFromString(countStr);
+
+  if (count === undefined || count < 0)
+    throw new RespError('value is not an integer or out of range');
+
+  const result: string[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const value = list.shift();
+    if (value === undefined) break;
+    result.push(value);
+  }
+
+  if (list.length() === 0) {
+    store.delete(key);
+  }
+
+  return result;
+}
+
+function handleRpop(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 1)
+    throw new RespError('wrong number of arguments for RPOP command');
+
+  const key = args[0];
+  const countStr = args[1];
+
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    return null;
+  }
+
+  if (!isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  const list = currentValue;
+
+  if (countStr === undefined) {
+    const result = list.pop() ?? null;
+    if (list.length() === 0) {
+      store.delete(key);
+    }
+    return result;
+  }
+
+  const count = getIntFromString(countStr);
+
+  if (count === undefined || count < 0)
+    throw new RespError('value is not an integer or out of range');
+
+  const result: string[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const value = list.pop();
+    if (value === undefined) break;
+    result.push(value);
+  }
+
+  if (list.length() === 0) {
+    store.delete(key);
+  }
+
+  return result;
+}
+
+function handleLindex(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for LINDEX command');
+
+  const key = args[0];
+  const indexStr = args[1];
+
+  const index = getIntFromString(indexStr);
+  if (index === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    return null;
+  }
+
+  if (!isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  const list = currentValue;
+  const length = list.length();
+
+  // Handle negative indices
+  let normalizedIndex = index;
+  if (index < 0) {
+    normalizedIndex = length + index;
+  }
+
+  // Check if index is out of range
+  if (normalizedIndex < 0 || normalizedIndex >= length) {
+    return null;
+  }
+
+  const value = list.at(normalizedIndex);
+  return value ?? null;
+}
+
+function handleLset(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 3)
+    throw new RespError('wrong number of arguments for LSET command');
+
+  const key = args[0];
+  const indexStr = args[1];
+  const newValue = args[2];
+
+  const index = getIntFromString(indexStr);
+  if (index === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    throw new RespError('no such key');
+  }
+
+  if (!isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  const list = currentValue;
+  const length = list.length();
+
+  // Handle negative indices
+  let normalizedIndex = index;
+  if (index < 0) {
+    normalizedIndex = length + index;
+  }
+
+  // Check if index is out of range
+  if (normalizedIndex < 0 || normalizedIndex >= length) {
+    throw new RespError('index out of range');
+  }
+
+  list.set(normalizedIndex, newValue);
+
+  return 'OK';
+}
+
+function handleLtrim(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 3)
+    throw new RespError('wrong number of arguments for LTRIM command');
+
+  const key = args[0];
+  const startStr = args[1];
+  const stopStr = args[2];
+
+  const start = getIntFromString(startStr);
+  if (start === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const stop = getIntFromString(stopStr);
+  if (stop === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const currentValue = store.get(key);
+
+  // If key doesn't exist, it's a no-op
+  if (currentValue === undefined) {
+    return 'OK';
+  }
+
+  if (!isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  const list = currentValue;
+  const size = list.length();
+
+  let normalizedStart =
+    start < 0 ? Math.max(0, size + start) : Math.min(start, size);
+  let normalizedEnd =
+    stop < 0 ? Math.max(-1, size + stop) : Math.min(stop, size - 1);
+
+  list.trim(normalizedStart, normalizedEnd);
+
+  if (list.length() === 0) {
+    store.delete(key);
+  }
+
+  return 'OK';
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -525,6 +761,12 @@ const commands: Record<string, CommandHandler> = {
   LPUSH: handleLpush,
   RPUSH: handleRpush,
   LRANGE: handleLrange,
+  LLEN: handleLlen,
+  LPOP: handleLpop,
+  RPOP: handleRpop,
+  LINDEX: handleLindex,
+  LSET: handleLset,
+  LTRIM: handleLtrim,
 };
 
 export function getResponseFromOperation(

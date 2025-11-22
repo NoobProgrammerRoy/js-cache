@@ -12,9 +12,14 @@ export type TWriteOperation =
   | 'DECRBY'
   | 'APPEND'
   | 'SETRANGE'
+  | 'GETDEL'
   | 'RENAME'
   | 'LPUSH'
   | 'RPUSH'
+  | 'LPOP'
+  | 'RPOP'
+  | 'LSET'
+  | 'LTRIM'
   | 'FLUSHALL';
 
 export interface IStore<K, V> {
@@ -47,7 +52,9 @@ export interface IList<T> {
   shift: () => T | undefined;
   pop: () => T | undefined;
   at: (index: number) => T | undefined;
+  set: (index: number, value: T) => void;
   slice: (start: number, end: number) => T[];
+  trim: (start: number, end: number) => void;
   length: () => number;
   clear: () => void;
 }
