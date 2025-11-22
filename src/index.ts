@@ -61,6 +61,7 @@ async function persistToAOF(operation: TWriteOperation, args: string[]) {
     await aof.append(operation, args[0], args[1], args[2]);
   else if (operation === 'LTRIM')
     await aof.append(operation, args[0], args[1], args[2]);
+  else if (operation === 'SADD') await aof.append(operation, ...args);
 }
 
 async function executeAndPersist(operation: string, args: string[]) {

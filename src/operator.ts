@@ -5,6 +5,7 @@ import {
   getIntFromString,
   getNumberFromString,
   isListDataType,
+  isSetDataType,
   isStringDataType,
   WRONGTYPE_ERROR,
 } from './util.js';
@@ -733,6 +734,57 @@ function handleLtrim(store: IStore<string, TDataType>, args: string[]) {
   return 'OK';
 }
 
+function handleSadd(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for SADD command');
+
+  const key = args[0];
+  const members = args.slice(1);
+
+  const currentValue = store.get(key);
+
+  if (currentValue !== undefined && !isSetDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  let set: Set<string>;
+  if (currentValue === undefined) {
+    set = new Set();
+  } else {
+    set = currentValue;
+  }
+
+  let addedCount = 0;
+  for (const member of members) {
+    if (!set.has(member)) {
+      set.add(member);
+      addedCount++;
+    }
+  }
+
+  store.set(key, set);
+
+  return addedCount;
+}
+
+function handleSmembers(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 1)
+    throw new RespError('wrong number of arguments for SMEMBERS command');
+
+  const key = args[0];
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    return [];
+  }
+
+  if (!isSetDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  return Array.from(currentValue);
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -767,6 +819,8 @@ const commands: Record<string, CommandHandler> = {
   LINDEX: handleLindex,
   LSET: handleLset,
   LTRIM: handleLtrim,
+  SADD: handleSadd,
+  SMEMBERS: handleSmembers,
 };
 
 export function getResponseFromOperation(
