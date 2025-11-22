@@ -946,6 +946,55 @@ function handleSinter(
   return Array.from(intersectionSet || new Set());
 }
 
+function handleSdiff(
+  store: IStore<string, TDataType>,
+  args: string[]
+): TRespType {
+  if (args.length < 1)
+    throw new RespError('wrong number of arguments for SDIFF command');
+
+  const keys = args;
+  const firstKey = keys[0];
+  const firstValue = store.get(firstKey);
+
+  if (firstValue === undefined) {
+    return [];
+  }
+
+  if (!isSetDataType(firstValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  // Start with first set (or empty set if non-existent)
+  const diffSet = new Set<string>();
+
+  for (const member of firstValue) {
+    diffSet.add(member);
+  }
+
+  // Remove members found in any of the subsequent sets
+  for (let i = 1; i < keys.length; i++) {
+    const key = keys[i];
+    const value = store.get(key);
+
+    // Skip non-existent keys (treated as empty sets)
+    if (value === undefined) {
+      continue;
+    }
+
+    if (!isSetDataType(value)) {
+      throw new RespError(WRONGTYPE_ERROR);
+    }
+
+    // Remove members from diffSet that are in this set
+    for (const member of value) {
+      diffSet.delete(member);
+    }
+  }
+
+  return Array.from(diffSet);
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -988,6 +1037,7 @@ const commands: Record<string, CommandHandler> = {
   SMISMEMBER: handleSmismember,
   SUNION: handleSunion,
   SINTER: handleSinter,
+  SDIFF: handleSdiff,
 };
 
 export function getResponseFromOperation(
