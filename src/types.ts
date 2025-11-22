@@ -1,4 +1,4 @@
-export type TDataType = string | number | IList<string>;
+export type TDataType = string | number | IList<string> | Set<string>;
 
 export type TRespType = string | number | boolean | null | TRespType[];
 
@@ -20,6 +20,8 @@ export type TWriteOperation =
   | 'RPOP'
   | 'LSET'
   | 'LTRIM'
+  | 'SADD'
+  | 'SREM'
   | 'FLUSHALL';
 
 export interface IStore<K, V> {

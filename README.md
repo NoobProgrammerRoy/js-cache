@@ -49,6 +49,10 @@ GET, SET, MGET, MSET, STRLEN, GETRANGE, SETRANGE, GETDEL, APPEND, INCR, INCRBY, 
 
 LPUSH, RPUSH, LPOP, RPOP, LLEN, LRANGE, LINDEX, LSET, LTRIM
 
+### Set Commands
+
+SADD, SREM, SMEMBERS, SCARD, SISMEMBER, SMISMEMBER, SUNION, SINTER, SDIFF
+
 ### Key Commands
 
 DEL, EXISTS, RENAME, TYPE
@@ -65,8 +69,9 @@ FLUSHALL, PING, ECHO
 - ✅ TCP server with graceful shutdown
 - ✅ String commands
 - ✅ List commands
+- ✅ Set commands
 - [ ] Hash commands
-- [ ] Set / Sorted set commands
+- [ ] Sorted set commands
 - [ ] Misc. server commands
 - [ ] Expiration and TTL
 - [ ] Improved AOF persistence

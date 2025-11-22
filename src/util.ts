@@ -27,3 +27,7 @@ export function isListDataType(value: unknown): value is IList<string> {
     value !== null && typeof value === 'object' && value instanceof LinkedList
   );
 }
+
+export function isSetDataType(value: unknown): value is Set<string> {
+  return value !== null && typeof value === 'object' && value instanceof Set;
+}

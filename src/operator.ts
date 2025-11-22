@@ -5,6 +5,7 @@ import {
   getIntFromString,
   getNumberFromString,
   isListDataType,
+  isSetDataType,
   isStringDataType,
   WRONGTYPE_ERROR,
 } from './util.js';
@@ -733,6 +734,267 @@ function handleLtrim(store: IStore<string, TDataType>, args: string[]) {
   return 'OK';
 }
 
+function handleSadd(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for SADD command');
+
+  const key = args[0];
+  const members = args.slice(1);
+
+  const currentValue = store.get(key);
+
+  if (currentValue !== undefined && !isSetDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  let set: Set<string>;
+  if (currentValue === undefined) {
+    set = new Set();
+  } else {
+    set = currentValue;
+  }
+
+  let addedCount = 0;
+  for (const member of members) {
+    if (!set.has(member)) {
+      set.add(member);
+      addedCount++;
+    }
+  }
+
+  store.set(key, set);
+
+  return addedCount;
+}
+
+function handleSmembers(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 1)
+    throw new RespError('wrong number of arguments for SMEMBERS command');
+
+  const key = args[0];
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    return [];
+  }
+
+  if (!isSetDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  return Array.from(currentValue);
+}
+
+function handleScard(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 1)
+    throw new RespError('wrong number of arguments for SCARD command');
+
+  const key = args[0];
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    return 0;
+  }
+
+  if (!isSetDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  return currentValue.size;
+}
+
+function handleSrem(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for SREM command');
+
+  const key = args[0];
+  const members = args.slice(1);
+
+  const currentValue = store.get(key);
+
+  // If key doesn't exist, return 0 (no members removed)
+  if (currentValue === undefined) {
+    return 0;
+  }
+
+  if (!isSetDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  const set = currentValue;
+  let removedCount = 0;
+
+  for (const member of members) {
+    if (set.has(member)) {
+      set.delete(member);
+      removedCount++;
+    }
+  }
+
+  // Delete key if set is now empty
+  if (set.size === 0) {
+    store.delete(key);
+  }
+
+  return removedCount;
+}
+
+function handleSismember(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 2)
+    throw new RespError('wrong number of arguments for SISMEMBER command');
+
+  const key = args[0];
+  const member = args[1];
+
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    return 0;
+  }
+
+  if (!isSetDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  return currentValue.has(member) ? 1 : 0;
+}
+
+function handleSmismember(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for SMISMEMBER command');
+
+  const key = args[0];
+  const members = args.slice(1);
+
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    return members.map(() => 0);
+  }
+
+  if (!isSetDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  return members.map((member) => (currentValue.has(member) ? 1 : 0));
+}
+
+function handleSunion(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 1)
+    throw new RespError('wrong number of arguments for SUNION command');
+
+  const keys = args;
+  const unionSet = new Set<string>();
+
+  for (const key of keys) {
+    const value = store.get(key);
+
+    // Skip non-existent keys (treated as empty sets)
+    if (value === undefined) {
+      continue;
+    }
+
+    if (!isSetDataType(value)) {
+      throw new RespError(WRONGTYPE_ERROR);
+    }
+
+    for (const member of value) {
+      unionSet.add(member);
+    }
+  }
+
+  return Array.from(unionSet);
+}
+
+function handleSinter(
+  store: IStore<string, TDataType>,
+  args: string[]
+): TRespType {
+  if (args.length < 1)
+    throw new RespError('wrong number of arguments for SINTER command');
+
+  const keys = args;
+  let intersectionSet: Set<string> | null = null;
+
+  for (const key of keys) {
+    const value = store.get(key);
+
+    // If any key is non-existent (empty set), result is empty
+    if (value === undefined) {
+      return [];
+    }
+
+    if (!isSetDataType(value)) {
+      throw new RespError(WRONGTYPE_ERROR);
+    }
+
+    if (intersectionSet === null) {
+      // Initialize with first set
+      intersectionSet = new Set(value);
+    } else {
+      // Keep only members that are in both sets
+      const nextSet = new Set<string>();
+      for (const member of intersectionSet) {
+        if (value.has(member)) {
+          nextSet.add(member);
+        }
+      }
+      intersectionSet = nextSet;
+    }
+  }
+
+  return Array.from(intersectionSet || new Set());
+}
+
+function handleSdiff(
+  store: IStore<string, TDataType>,
+  args: string[]
+): TRespType {
+  if (args.length < 1)
+    throw new RespError('wrong number of arguments for SDIFF command');
+
+  const keys = args;
+  const firstKey = keys[0];
+  const firstValue = store.get(firstKey);
+
+  if (firstValue === undefined) {
+    return [];
+  }
+
+  if (!isSetDataType(firstValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  // Start with first set (or empty set if non-existent)
+  const diffSet = new Set<string>();
+
+  for (const member of firstValue) {
+    diffSet.add(member);
+  }
+
+  // Remove members found in any of the subsequent sets
+  for (let i = 1; i < keys.length; i++) {
+    const key = keys[i];
+    const value = store.get(key);
+
+    // Skip non-existent keys (treated as empty sets)
+    if (value === undefined) {
+      continue;
+    }
+
+    if (!isSetDataType(value)) {
+      throw new RespError(WRONGTYPE_ERROR);
+    }
+
+    // Remove members from diffSet that are in this set
+    for (const member of value) {
+      diffSet.delete(member);
+    }
+  }
+
+  return Array.from(diffSet);
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -767,6 +1029,15 @@ const commands: Record<string, CommandHandler> = {
   LINDEX: handleLindex,
   LSET: handleLset,
   LTRIM: handleLtrim,
+  SADD: handleSadd,
+  SMEMBERS: handleSmembers,
+  SCARD: handleScard,
+  SREM: handleSrem,
+  SISMEMBER: handleSismember,
+  SMISMEMBER: handleSmismember,
+  SUNION: handleSunion,
+  SINTER: handleSinter,
+  SDIFF: handleSdiff,
 };
 
 export function getResponseFromOperation(
