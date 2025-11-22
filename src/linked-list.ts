@@ -197,15 +197,8 @@ class LinkedList implements IList<string> {
       this.tail = endNode;
     }
 
-    // Recalculate size
-    let newSize = 0;
-    let current = this.head;
-    while (current !== null) {
-      newSize++;
-      current = current.next;
-    }
-
-    this.size = newSize;
+    // Recalculate size efficiently
+    this.size = end - start + 1;
   }
 
   // Get the length of the list
