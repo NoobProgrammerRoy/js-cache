@@ -88,7 +88,7 @@ describe('SINTER command', () => {
       'key2',
       'key3',
     ]) as string[];
-    assert.deepStrictEqual(result, ['c', 'd']);
+    assert.deepStrictEqual(result.sort(), ['c', 'd']);
   });
 
   it('should throw WRONGTYPE error when key holds string value', () => {
