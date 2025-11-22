@@ -593,6 +593,45 @@ function handleRpop(store: IStore<string, TDataType>, args: string[]) {
   return result;
 }
 
+function handleLindex(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for LINDEX command');
+
+  const key = args[0];
+  const indexStr = args[1];
+
+  const index = getIntFromString(indexStr);
+  if (index === undefined)
+    throw new RespError('value is not an integer or out of range');
+
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    return null;
+  }
+
+  if (!isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  const list = currentValue;
+  const length = list.length();
+
+  // Handle negative indices
+  let normalizedIndex = index;
+  if (index < 0) {
+    normalizedIndex = length + index;
+  }
+
+  // Check if index is out of range
+  if (normalizedIndex < 0 || normalizedIndex >= length) {
+    return null;
+  }
+
+  const value = list.at(normalizedIndex);
+  return value ?? null;
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -624,6 +663,7 @@ const commands: Record<string, CommandHandler> = {
   LLEN: handleLlen,
   LPOP: handleLpop,
   RPOP: handleRpop,
+  LINDEX: handleLindex,
 };
 
 export function getResponseFromOperation(
