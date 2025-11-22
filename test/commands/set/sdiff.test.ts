@@ -132,6 +132,6 @@ describe('SDIFF command', () => {
     executeCommand('RENAME', ['oldkey1', 'newkey1']);
     executeCommand('RENAME', ['oldkey2', 'newkey2']);
     const result = executeCommand('SDIFF', ['newkey1', 'newkey2']) as string[];
-    assert.deepStrictEqual(result, ['a']);
+    assert.deepStrictEqual(result.sort(), ['a']);
   });
 });
