@@ -21,6 +21,7 @@ export type TWriteOperation =
   | 'LSET'
   | 'LTRIM'
   | 'SADD'
+  | 'SREM'
   | 'FLUSHALL';
 
 export interface IStore<K, V> {

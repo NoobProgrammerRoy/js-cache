@@ -803,6 +803,42 @@ function handleScard(store: IStore<string, TDataType>, args: string[]) {
   return currentValue.size;
 }
 
+function handleSrem(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for SREM command');
+
+  const key = args[0];
+  const members = args.slice(1);
+
+  const currentValue = store.get(key);
+
+  // If key doesn't exist, return 0 (no members removed)
+  if (currentValue === undefined) {
+    return 0;
+  }
+
+  if (!isSetDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  const set = currentValue;
+  let removedCount = 0;
+
+  for (const member of members) {
+    if (set.has(member)) {
+      set.delete(member);
+      removedCount++;
+    }
+  }
+
+  // Delete key if set is now empty
+  if (set.size === 0) {
+    store.delete(key);
+  }
+
+  return removedCount;
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -840,6 +876,7 @@ const commands: Record<string, CommandHandler> = {
   SADD: handleSadd,
   SMEMBERS: handleSmembers,
   SCARD: handleScard,
+  SREM: handleSrem,
 };
 
 export function getResponseFromOperation(
