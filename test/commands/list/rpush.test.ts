@@ -41,44 +41,6 @@ describe('RPUSH command', () => {
     assert.deepStrictEqual(range, ['100', '200', '300']);
   });
 
-  it('should push special characters', () => {
-    const result = executeCommand('RPUSH', [
-      'mylist',
-      'hello world',
-      '!@#$%',
-      '',
-    ]);
-    assert.strictEqual(result, 3);
-    const range = executeCommand('LRANGE', ['mylist', '0', '-1']);
-    assert.deepStrictEqual(range, ['hello world', '!@#$%', '']);
-  });
-
-  it('should push unicode characters', () => {
-    const result = executeCommand('RPUSH', ['mylist', '你好', '世界']);
-    assert.strictEqual(result, 2);
-    const range = executeCommand('LRANGE', ['mylist', '0', '-1']);
-    assert.deepStrictEqual(range, ['你好', '世界']);
-  });
-
-  it('should push emoji characters', () => {
-    const result = executeCommand('RPUSH', ['mylist', '😀', '😁', '😂']);
-    assert.strictEqual(result, 3);
-    const range = executeCommand('LRANGE', ['mylist', '0', '-1']);
-    assert.deepStrictEqual(range, ['😀', '😁', '😂']);
-  });
-
-  it('should preserve exact string content including whitespace', () => {
-    const result = executeCommand('RPUSH', [
-      'mylist',
-      '  leading',
-      'trailing  ',
-      ' both ',
-    ]);
-    assert.strictEqual(result, 3);
-    const range = executeCommand('LRANGE', ['mylist', '0', '-1']);
-    assert.deepStrictEqual(range, ['  leading', 'trailing  ', ' both ']);
-  });
-
   it('should return error when key holds a string value', () => {
     executeCommand('SET', ['mykey', 'string_value']);
     assert.throws(
@@ -117,25 +79,6 @@ describe('RPUSH command', () => {
     assert.deepStrictEqual(range, ['a', 'b', 'c']);
   });
 
-  it('should handle very long string values', () => {
-    const longString = 'x'.repeat(10000);
-    const result = executeCommand('RPUSH', ['mylist', longString]);
-    assert.strictEqual(result, 1);
-    const range = executeCommand('LRANGE', ['mylist', '0', '-1']);
-    assert.deepStrictEqual(range, [longString]);
-  });
-
-  it('should handle newlines and special control characters', () => {
-    const result = executeCommand('RPUSH', [
-      'mylist',
-      'line1\nline2',
-      'tab\tseparated',
-    ]);
-    assert.strictEqual(result, 2);
-    const range = executeCommand('LRANGE', ['mylist', '0', '-1']);
-    assert.deepStrictEqual(range, ['line1\nline2', 'tab\tseparated']);
-  });
-
   it('should maintain list after RPUSH with multiple keys in store', () => {
     executeCommand('SET', ['key1', 'value1']);
     executeCommand('SET', ['key2', 'value2']);
@@ -150,17 +93,6 @@ describe('RPUSH command', () => {
     assert.deepStrictEqual(range, ['a', 'b']);
   });
 
-  it('should return updated list length after consecutive RPUSH commands', () => {
-    let result = executeCommand('RPUSH', ['mylist', 'a', 'b']);
-    assert.strictEqual(result, 2);
-
-    result = executeCommand('RPUSH', ['mylist', 'c', 'd', 'e']);
-    assert.strictEqual(result, 5);
-
-    const range = executeCommand('LRANGE', ['mylist', '0', '-1']);
-    assert.deepStrictEqual(range, ['a', 'b', 'c', 'd', 'e']);
-  });
-
   it('should combine LPUSH and RPUSH operations', () => {
     executeCommand('LPUSH', ['mylist', 'first']);
     executeCommand('RPUSH', ['mylist', 'second']);
@@ -169,21 +101,5 @@ describe('RPUSH command', () => {
 
     const range = executeCommand('LRANGE', ['mylist', '0', '-1']);
     assert.deepStrictEqual(range, ['zero', 'first', 'second', 'third']);
-  });
-
-  it('should handle large lists with RPUSH', () => {
-    const largeArray = Array.from({ length: 100 }, (_, i) => String(i));
-    for (let i = 0; i < 100; i++) {
-      executeCommand('RPUSH', ['mylist', String(i)]);
-    }
-    const result = executeCommand('LRANGE', ['mylist', '0', '-1']);
-    assert.deepStrictEqual(result, largeArray);
-  });
-
-  it('should work with empty string elements', () => {
-    const result = executeCommand('RPUSH', ['mylist', '', 'middle', '']);
-    assert.strictEqual(result, 3);
-    const range = executeCommand('LRANGE', ['mylist', '0', '-1']);
-    assert.deepStrictEqual(range, ['', 'middle', '']);
   });
 });

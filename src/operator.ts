@@ -2,6 +2,7 @@ import { RespError } from './error.js';
 import LinkedList from './linked-list.js';
 import { IList, IStore, TDataType, TRespType } from './types.js';
 import {
+  getIntFromString,
   getNumberFromString,
   isListDataType,
   isStringDataType,
@@ -100,11 +101,7 @@ function handleStrlen(store: IStore<string, TDataType>, args: string[]) {
     return value.length;
   }
 
-  if (typeof value === 'number') {
-    return value.toString().length;
-  }
-
-  throw new RespError(WRONGTYPE_ERROR);
+  return value.toString().length;
 }
 
 function handleGetRange(store: IStore<string, TDataType>, args: string[]) {
@@ -229,10 +226,8 @@ function handleAppend(store: IStore<string, TDataType>, args: string[]) {
     newValue = valueToAppend;
   } else if (typeof currentValue === 'string') {
     newValue = currentValue.concat(valueToAppend);
-  } else if (typeof currentValue === 'number') {
-    newValue = currentValue.toString().concat(valueToAppend);
   } else {
-    throw new RespError(WRONGTYPE_ERROR);
+    newValue = currentValue.toString().concat(valueToAppend);
   }
 
   store.set(key, newValue);
@@ -478,11 +473,11 @@ function handleLrange(store: IStore<string, TDataType>, args: string[]) {
   const startStr = args[1];
   const stopStr = args[2];
 
-  const start = getNumberFromString(startStr);
+  const start = getIntFromString(startStr);
   if (start === undefined)
     throw new RespError('value is not an integer or out of range');
 
-  const stop = getNumberFromString(stopStr);
+  const stop = getIntFromString(stopStr);
   if (stop === undefined)
     throw new RespError('value is not an integer or out of range');
 

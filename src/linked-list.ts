@@ -70,7 +70,7 @@ class LinkedList implements IList<string> {
     return value;
   }
 
-  //  Get element at index
+  // Get element at index
   at(index: number) {
     if (index < 0 || index >= this.size) return undefined;
 

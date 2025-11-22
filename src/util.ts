@@ -11,6 +11,13 @@ export function getNumberFromString(value: string): number | undefined {
   return !isNaN(parsed) ? parsed : undefined;
 }
 
+export function getIntFromString(value: string): number | undefined {
+  if (value.trim() === '') return undefined;
+
+  const parsed = parseInt(value, 10);
+  return !isNaN(parsed) ? parsed : undefined;
+}
+
 export function isStringDataType(value: unknown): value is string | number {
   return typeof value === 'string' || typeof value === 'number';
 }

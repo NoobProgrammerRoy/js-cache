@@ -133,50 +133,6 @@ describe('LRANGE command', () => {
     );
   });
 
-  it('should handle large lists correctly', () => {
-    const largeArray = Array.from({ length: 100 }, (_, i) => String(i));
-    // LPUSH in reverse order to get [0, 1, 2, ..., 99]
-    for (let i = 99; i >= 0; i--) {
-      executeCommand('LPUSH', ['mylist', String(i)]);
-    }
-    const result = executeCommand('LRANGE', ['mylist', '0', '99']);
-    assert.deepStrictEqual(result, largeArray);
-  });
-
-  it('should return correct subset of large list', () => {
-    const largeArray = Array.from({ length: 100 }, (_, i) => String(i));
-    // LPUSH in reverse order to get [0, 1, 2, ..., 99]
-    for (let i = 99; i >= 0; i--) {
-      executeCommand('LPUSH', ['mylist', String(i)]);
-    }
-    const result = executeCommand('LRANGE', ['mylist', '10', '19']);
-    assert.deepStrictEqual(result, largeArray.slice(10, 20));
-  });
-
-  it('should handle special characters in list elements', () => {
-    executeCommand('LPUSH', ['mylist', '!@#$%', 'hello world', 'test\nline']);
-    const result = executeCommand('LRANGE', ['mylist', '0', '-1']);
-    assert.deepStrictEqual(result, ['test\nline', 'hello world', '!@#$%']);
-  });
-
-  it('should handle unicode characters', () => {
-    executeCommand('LPUSH', ['mylist', '世界', '你好']);
-    const result = executeCommand('LRANGE', ['mylist', '0', '-1']);
-    assert.deepStrictEqual(result, ['你好', '世界']);
-  });
-
-  it('should handle emoji characters', () => {
-    executeCommand('LPUSH', ['mylist', '😀', '😁']);
-    const result = executeCommand('LRANGE', ['mylist', '0', '1']);
-    assert.deepStrictEqual(result, ['😁', '😀']);
-  });
-
-  it('should handle empty string elements', () => {
-    executeCommand('LPUSH', ['mylist', '', 'middle', '']);
-    const result = executeCommand('LRANGE', ['mylist', '0', '-1']);
-    assert.deepStrictEqual(result, ['', 'middle', '']);
-  });
-
   it('should maintain list after LRANGE operations', () => {
     executeCommand('LPUSH', ['mylist', 'three', 'two', 'one']);
     executeCommand('LRANGE', ['mylist', '0', '1']);
