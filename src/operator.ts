@@ -906,6 +906,46 @@ function handleSunion(store: IStore<string, TDataType>, args: string[]) {
   return Array.from(unionSet);
 }
 
+function handleSinter(
+  store: IStore<string, TDataType>,
+  args: string[]
+): TRespType {
+  if (args.length < 1)
+    throw new RespError('wrong number of arguments for SINTER command');
+
+  const keys = args;
+  let intersectionSet: Set<string> | null = null;
+
+  for (const key of keys) {
+    const value = store.get(key);
+
+    // If any key is non-existent (empty set), result is empty
+    if (value === undefined) {
+      return [];
+    }
+
+    if (!isSetDataType(value)) {
+      throw new RespError(WRONGTYPE_ERROR);
+    }
+
+    if (intersectionSet === null) {
+      // Initialize with first set
+      intersectionSet = new Set(value);
+    } else {
+      // Keep only members that are in both sets
+      const nextSet = new Set<string>();
+      for (const member of intersectionSet) {
+        if (value.has(member)) {
+          nextSet.add(member);
+        }
+      }
+      intersectionSet = nextSet;
+    }
+  }
+
+  return Array.from(intersectionSet || new Set());
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -947,6 +987,7 @@ const commands: Record<string, CommandHandler> = {
   SISMEMBER: handleSismember,
   SMISMEMBER: handleSmismember,
   SUNION: handleSunion,
+  SINTER: handleSinter,
 };
 
 export function getResponseFromOperation(
