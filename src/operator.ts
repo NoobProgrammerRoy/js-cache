@@ -859,6 +859,26 @@ function handleSismember(store: IStore<string, TDataType>, args: string[]) {
   return currentValue.has(member) ? 1 : 0;
 }
 
+function handleSmismember(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 2)
+    throw new RespError('wrong number of arguments for SMISMEMBER command');
+
+  const key = args[0];
+  const members = args.slice(1);
+
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    return members.map(() => 0);
+  }
+
+  if (!isSetDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  return members.map((member) => (currentValue.has(member) ? 1 : 0));
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -898,6 +918,7 @@ const commands: Record<string, CommandHandler> = {
   SCARD: handleScard,
   SREM: handleSrem,
   SISMEMBER: handleSismember,
+  SMISMEMBER: handleSmismember,
 };
 
 export function getResponseFromOperation(
