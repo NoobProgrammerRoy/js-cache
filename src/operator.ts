@@ -839,6 +839,26 @@ function handleSrem(store: IStore<string, TDataType>, args: string[]) {
   return removedCount;
 }
 
+function handleSismember(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 2)
+    throw new RespError('wrong number of arguments for SISMEMBER command');
+
+  const key = args[0];
+  const member = args[1];
+
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    return 0;
+  }
+
+  if (!isSetDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  return currentValue.has(member) ? 1 : 0;
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -877,6 +897,7 @@ const commands: Record<string, CommandHandler> = {
   SMEMBERS: handleSmembers,
   SCARD: handleScard,
   SREM: handleSrem,
+  SISMEMBER: handleSismember,
 };
 
 export function getResponseFromOperation(
