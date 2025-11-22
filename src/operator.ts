@@ -554,6 +554,45 @@ function handleLpop(store: IStore<string, TDataType>, args: string[]) {
   return result;
 }
 
+function handleRpop(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 1)
+    throw new RespError('wrong number of arguments for RPOP command');
+
+  const key = args[0];
+  const countStr = args[1];
+
+  const currentValue = store.get(key);
+
+  if (currentValue === undefined) {
+    return null;
+  }
+
+  if (!isListDataType(currentValue)) {
+    throw new RespError(WRONGTYPE_ERROR);
+  }
+
+  const list = currentValue;
+
+  if (countStr === undefined) {
+    return list.pop() ?? null;
+  }
+
+  const count = getIntFromString(countStr);
+
+  if (count === undefined || count < 0)
+    throw new RespError('value is not an integer or out of range');
+
+  const result: string[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const value = list.pop();
+    if (value === undefined) break;
+    result.push(value);
+  }
+
+  return result;
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -584,6 +623,7 @@ const commands: Record<string, CommandHandler> = {
   LRANGE: handleLrange,
   LLEN: handleLlen,
   LPOP: handleLpop,
+  RPOP: handleRpop,
 };
 
 export function getResponseFromOperation(
