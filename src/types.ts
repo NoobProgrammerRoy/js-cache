@@ -12,9 +12,14 @@ export type TWriteOperation =
   | 'DECRBY'
   | 'APPEND'
   | 'SETRANGE'
+  | 'GETDEL'
   | 'RENAME'
   | 'LPUSH'
   | 'RPUSH'
+  | 'LPOP'
+  | 'RPOP'
+  | 'LSET'
+  | 'LTRIM'
   | 'FLUSHALL';
 
 export interface IStore<K, V> {

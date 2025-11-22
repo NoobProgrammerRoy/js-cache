@@ -44,6 +44,7 @@ async function persistToAOF(operation: TWriteOperation, args: string[]) {
     await aof.append(operation, args[0], args[1]);
   else if (operation === 'SETRANGE')
     await aof.append(operation, args[0], args[1], args[2]);
+  else if (operation === 'GETDEL') await aof.append(operation, args[0]);
   else if (operation === 'INCR' || operation === 'DECR')
     await aof.append(operation, args[0]);
   else if (operation === 'INCRBY' || operation === 'DECRBY')
@@ -52,6 +53,14 @@ async function persistToAOF(operation: TWriteOperation, args: string[]) {
     await aof.append(operation, args[0], args[1]);
   else if (operation === 'LPUSH') await aof.append(operation, ...args);
   else if (operation === 'RPUSH') await aof.append(operation, ...args);
+  else if (operation === 'LPOP')
+    await aof.append(operation, args[0], ...(args[1] ? [args[1]] : []));
+  else if (operation === 'RPOP')
+    await aof.append(operation, args[0], ...(args[1] ? [args[1]] : []));
+  else if (operation === 'LSET')
+    await aof.append(operation, args[0], args[1], args[2]);
+  else if (operation === 'LTRIM')
+    await aof.append(operation, args[0], args[1], args[2]);
 }
 
 async function executeAndPersist(operation: string, args: string[]) {
