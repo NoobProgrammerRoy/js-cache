@@ -39,15 +39,23 @@ I'm planning to use this project as a learning reference to implement more featu
 - Redis data structures
 - Improved AOF implementation
 
-## Supported commands
+## Supported Commands
 
-- GET
-- SET
-- EXISTS
-- DEL
-- FLUSHALL
-- PING
-- INCR
+### String Commands
+
+GET, SET, MGET, MSET, STRLEN, GETRANGE, SETRANGE, GETDEL, APPEND, INCR, INCRBY, DECR, DECRBY
+
+### List Commands
+
+LPUSH, RPUSH, LPOP, RPOP, LLEN, LRANGE, LINDEX, LSET, LTRIM
+
+### Key Commands
+
+DEL, EXISTS, RENAME, TYPE
+
+### Server Commands
+
+FLUSHALL, PING, ECHO
 
 ## Roadmap
 
@@ -56,7 +64,7 @@ I'm planning to use this project as a learning reference to implement more featu
 - ✅ Append-Only File (AOF) persistence
 - ✅ TCP server with graceful shutdown
 - ✅ String commands
-- [ ] List commands
+- ✅ List commands
 - [ ] Hash commands
 - [ ] Set / Sorted set commands
 - [ ] Misc. server commands
