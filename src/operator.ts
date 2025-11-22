@@ -879,6 +879,33 @@ function handleSmismember(store: IStore<string, TDataType>, args: string[]) {
   return members.map((member) => (currentValue.has(member) ? 1 : 0));
 }
 
+function handleSunion(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length < 1)
+    throw new RespError('wrong number of arguments for SUNION command');
+
+  const keys = args;
+  const unionSet = new Set<string>();
+
+  for (const key of keys) {
+    const value = store.get(key);
+
+    // Skip non-existent keys (treated as empty sets)
+    if (value === undefined) {
+      continue;
+    }
+
+    if (!isSetDataType(value)) {
+      throw new RespError(WRONGTYPE_ERROR);
+    }
+
+    for (const member of value) {
+      unionSet.add(member);
+    }
+  }
+
+  return Array.from(unionSet);
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -919,6 +946,7 @@ const commands: Record<string, CommandHandler> = {
   SREM: handleSrem,
   SISMEMBER: handleSismember,
   SMISMEMBER: handleSmismember,
+  SUNION: handleSunion,
 };
 
 export function getResponseFromOperation(
