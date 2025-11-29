@@ -262,6 +262,32 @@ function handleKeys(store: IStore<string, TDataType>, args: string[]) {
   return allKeys.filter((key) => regex.test(key));
 }
 
+function handleType(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 1)
+    throw new RespError('wrong number of arguments for TYPE command');
+
+  const key = args[0];
+  const value = store.get(key);
+
+  if (value === undefined) {
+    return 'none';
+  }
+
+  if (isStringDataType(value)) {
+    return 'string';
+  }
+
+  if (isListDataType(value)) {
+    return 'list';
+  }
+
+  if (isSetDataType(value)) {
+    return 'set';
+  }
+
+  return 'none';
+}
+
 function handleFlushall(store: IStore<string, TDataType>, _args: string[]) {
   store.clear();
 
@@ -1025,6 +1051,7 @@ const commands: Record<string, CommandHandler> = {
   DEL: handleDel,
   EXISTS: handleExists,
   KEYS: handleKeys,
+  TYPE: handleType,
   FLUSHALL: handleFlushall,
   PING: handlePing,
   ECHO: handleEcho,
