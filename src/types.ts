@@ -22,6 +22,11 @@ export type TWriteOperation =
   | 'LTRIM'
   | 'SADD'
   | 'SREM'
+  | 'EXPIRE'
+  | 'PEXPIRE'
+  | 'EXPIREAT'
+  | 'PEXPIREAT'
+  | 'PERSIST'
   | 'FLUSHALL';
 
 export interface IStore<K, V> {
@@ -31,6 +36,9 @@ export interface IStore<K, V> {
   clear: () => void;
   has: (key: K) => boolean;
   keys: () => K[];
+  setExpiration: (key: K, expirationTimeMs: number) => void;
+  getExpiration: (key: K) => number | null;
+  removeExpiration: (key: K) => boolean;
 }
 
 export interface IAOF {
@@ -60,4 +68,9 @@ export interface IList<T> {
   trim: (start: number, end: number) => void;
   length: () => number;
   clear: () => void;
+}
+
+export interface IStoreValue {
+  data: TDataType;
+  expiration: number | null;
 }

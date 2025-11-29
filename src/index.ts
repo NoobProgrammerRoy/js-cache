@@ -63,6 +63,15 @@ async function persistToAOF(operation: TWriteOperation, args: string[]) {
     await aof.append(operation, args[0], args[1], args[2]);
   else if (operation === 'SADD') await aof.append(operation, ...args);
   else if (operation === 'SREM') await aof.append(operation, ...args);
+  else if (operation === 'EXPIRE')
+    await aof.append(operation, args[0], args[1]);
+  else if (operation === 'PEXPIRE')
+    await aof.append(operation, args[0], args[1]);
+  else if (operation === 'EXPIREAT')
+    await aof.append(operation, args[0], args[1]);
+  else if (operation === 'PEXPIREAT')
+    await aof.append(operation, args[0], args[1]);
+  else if (operation === 'PERSIST') await aof.append(operation, args[0]);
 }
 
 async function executeAndPersist(operation: string, args: string[]) {

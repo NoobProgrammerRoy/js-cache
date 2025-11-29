@@ -123,4 +123,94 @@ describe('SET command', () => {
     const getValue = executeCommand('GET', ['key']);
     assert.strictEqual(getValue, '');
   });
+
+  it('should set expiration with EX flag in seconds', () => {
+    const result = executeCommand('SET', ['mykey', 'value', 'EX', '10']);
+    assert.strictEqual(result, 'OK');
+    const ttl = executeCommand('TTL', ['mykey']) as number;
+    assert.ok(ttl > 0 && ttl <= 10);
+  });
+
+  it('should set expiration with PX flag in milliseconds', () => {
+    const result = executeCommand('SET', ['mykey', 'value', 'PX', '5000']);
+    assert.strictEqual(result, 'OK');
+    const pttl = executeCommand('PTTL', ['mykey']) as number;
+    assert.ok(pttl > 0 && pttl <= 5000);
+  });
+
+  it('should throw error when EX flag has no value', () => {
+    assert.throws(
+      () => executeCommand('SET', ['key', 'value', 'EX']),
+      RespError
+    );
+  });
+
+  it('should throw error when PX flag has no value', () => {
+    assert.throws(
+      () => executeCommand('SET', ['key', 'value', 'PX']),
+      RespError
+    );
+  });
+
+  it('should throw error when EX value is not a positive integer', () => {
+    assert.throws(
+      () => executeCommand('SET', ['key', 'value', 'EX', '0']),
+      RespError
+    );
+  });
+
+  it('should throw error when PX value is not a positive integer', () => {
+    assert.throws(
+      () => executeCommand('SET', ['key', 'value', 'PX', '-100']),
+      RespError
+    );
+  });
+
+  it('should throw error when both EX and PX are specified', () => {
+    assert.throws(
+      () => executeCommand('SET', ['key', 'value', 'EX', '10', 'PX', '5000']),
+      RespError
+    );
+  });
+
+  it('should work with EX and NX flags together', () => {
+    const result = executeCommand('SET', ['mykey', 'value', 'NX', 'EX', '10']);
+    assert.strictEqual(result, 'OK');
+    const ttl = executeCommand('TTL', ['mykey']) as number;
+    assert.ok(ttl > 0 && ttl <= 10);
+  });
+
+  it('should work with PX and XX flags together', () => {
+    executeCommand('SET', ['mykey', 'oldvalue']);
+    const result = executeCommand('SET', [
+      'mykey',
+      'value',
+      'XX',
+      'PX',
+      '5000',
+    ]);
+    assert.strictEqual(result, 'OK');
+    const pttl = executeCommand('PTTL', ['mykey']) as number;
+    assert.ok(pttl > 0 && pttl <= 5000);
+  });
+
+  it('should expire key after EX seconds', (t, done) => {
+    executeCommand('SET', ['mykey', 'value', 'EX', '1']);
+    assert.strictEqual(executeCommand('GET', ['mykey']), 'value');
+
+    setTimeout(() => {
+      assert.strictEqual(executeCommand('GET', ['mykey']), null);
+      done();
+    }, 1100);
+  });
+
+  it('should expire key after PX milliseconds', (t, done) => {
+    executeCommand('SET', ['mykey', 'value', 'PX', '500']);
+    assert.strictEqual(executeCommand('GET', ['mykey']), 'value');
+
+    setTimeout(() => {
+      assert.strictEqual(executeCommand('GET', ['mykey']), null);
+      done();
+    }, 600);
+  });
 });

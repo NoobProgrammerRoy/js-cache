@@ -19,6 +19,8 @@ function handleSet(store: IStore<string, TDataType>, args: string[]) {
   const value = args[1];
   let nx = false;
   let xx = false;
+  let exSeconds: number | null = null;
+  let pxMilliseconds: number | null = null;
 
   // Parse optional flags
   for (let i = 2; i < args.length; i++) {
@@ -27,6 +29,26 @@ function handleSet(store: IStore<string, TDataType>, args: string[]) {
       nx = true;
     } else if (flag === 'XX') {
       xx = true;
+    } else if (flag === 'EX') {
+      if (i + 1 >= args.length) {
+        throw new RespError('syntax error for SET command');
+      }
+      const seconds = getIntFromString(args[i + 1]);
+      if (seconds === undefined || seconds <= 0) {
+        throw new RespError('value is not an integer or out of range');
+      }
+      exSeconds = seconds;
+      i++; // Skip the next argument (the value)
+    } else if (flag === 'PX') {
+      if (i + 1 >= args.length) {
+        throw new RespError('syntax error for SET command');
+      }
+      const milliseconds = getIntFromString(args[i + 1]);
+      if (milliseconds === undefined || milliseconds <= 0) {
+        throw new RespError('value is not an integer or out of range');
+      }
+      pxMilliseconds = milliseconds;
+      i++; // Skip the next argument (the value)
     } else {
       throw new RespError(`syntax error for SET command`);
     }
@@ -36,6 +58,13 @@ function handleSet(store: IStore<string, TDataType>, args: string[]) {
   if (nx && xx) {
     throw new RespError(
       `syntax error: NX and XX options at the same time are not compatible`
+    );
+  }
+
+  // EX and PX are mutually exclusive
+  if (exSeconds !== null && pxMilliseconds !== null) {
+    throw new RespError(
+      `syntax error: EX and PX options at the same time are not compatible`
     );
   }
 
@@ -55,6 +84,15 @@ function handleSet(store: IStore<string, TDataType>, args: string[]) {
     store.set(key, Number(value));
   } else {
     store.set(key, value);
+  }
+
+  // Set expiration if provided
+  if (exSeconds !== null) {
+    const expirationTimeMs = Date.now() + exSeconds * 1000;
+    store.setExpiration(key, expirationTimeMs);
+  } else if (pxMilliseconds !== null) {
+    const expirationTimeMs = Date.now() + pxMilliseconds;
+    store.setExpiration(key, expirationTimeMs);
   }
 
   return 'OK';
@@ -1066,6 +1104,142 @@ function handleSdiff(
   return Array.from(diffSet);
 }
 
+function handleExpire(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 2)
+    throw new RespError('wrong number of arguments for EXPIRE command');
+
+  const key = args[0];
+  const seconds = getIntFromString(args[1]);
+
+  if (seconds === undefined) {
+    throw new RespError('value is not an integer or out of range');
+  }
+
+  if (!store.has(key)) {
+    return 0;
+  }
+
+  const expirationTimeMs = Date.now() + seconds * 1000;
+  store.setExpiration(key, expirationTimeMs);
+  return 1;
+}
+
+function handlePexpire(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 2)
+    throw new RespError('wrong number of arguments for PEXPIRE command');
+
+  const key = args[0];
+  const milliseconds = getIntFromString(args[1]);
+
+  if (milliseconds === undefined) {
+    throw new RespError('value is not an integer or out of range');
+  }
+
+  if (!store.has(key)) {
+    return 0;
+  }
+
+  const expirationTimeMs = Date.now() + milliseconds;
+  store.setExpiration(key, expirationTimeMs);
+  return 1;
+}
+
+function handleExpireat(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 2)
+    throw new RespError('wrong number of arguments for EXPIREAT command');
+
+  const key = args[0];
+  const timestamp = getIntFromString(args[1]);
+
+  if (timestamp === undefined) {
+    throw new RespError('value is not an integer or out of range');
+  }
+
+  if (!store.has(key)) {
+    return 0;
+  }
+
+  const expirationTimeMs = timestamp * 1000;
+  store.setExpiration(key, expirationTimeMs);
+  return 1;
+}
+
+function handlePexpireat(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 2)
+    throw new RespError('wrong number of arguments for PEXPIREAT command');
+
+  const key = args[0];
+  const timestampMs = getIntFromString(args[1]);
+
+  if (timestampMs === undefined) {
+    throw new RespError('value is not an integer or out of range');
+  }
+
+  if (!store.has(key)) {
+    return 0;
+  }
+
+  store.setExpiration(key, timestampMs);
+  return 1;
+}
+
+function handleTtl(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 1)
+    throw new RespError('wrong number of arguments for TTL command');
+
+  const key = args[0];
+
+  if (!store.has(key)) {
+    return -2;
+  }
+
+  const expirationTimeMs = store.getExpiration(key);
+
+  if (expirationTimeMs === null) {
+    return -1;
+  }
+
+  const remainingMs = expirationTimeMs - Date.now();
+  const remainingSeconds = Math.ceil(remainingMs / 1000);
+
+  return Math.max(-2, remainingSeconds);
+}
+
+function handlePttl(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 1)
+    throw new RespError('wrong number of arguments for PTTL command');
+
+  const key = args[0];
+
+  if (!store.has(key)) {
+    return -2;
+  }
+
+  const expirationTimeMs = store.getExpiration(key);
+
+  if (expirationTimeMs === null) {
+    return -1;
+  }
+
+  const remainingMs = expirationTimeMs - Date.now();
+
+  return Math.max(-2, remainingMs);
+}
+
+function handlePersist(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 1)
+    throw new RespError('wrong number of arguments for PERSIST command');
+
+  const key = args[0];
+
+  if (!store.has(key)) {
+    return 0;
+  }
+
+  const removed = store.removeExpiration(key);
+  return removed ? 1 : 0;
+}
+
 type CommandHandler = (
   store: IStore<string, TDataType>,
   args: string[]
@@ -1111,6 +1285,13 @@ const commands: Record<string, CommandHandler> = {
   SUNION: handleSunion,
   SINTER: handleSinter,
   SDIFF: handleSdiff,
+  EXPIRE: handleExpire,
+  PEXPIRE: handlePexpire,
+  EXPIREAT: handleExpireat,
+  PEXPIREAT: handlePexpireat,
+  TTL: handleTtl,
+  PTTL: handlePttl,
+  PERSIST: handlePersist,
 };
 
 export function getResponseFromOperation(
