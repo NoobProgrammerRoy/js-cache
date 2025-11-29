@@ -17,6 +17,39 @@ function handleSet(store: IStore<string, TDataType>, args: string[]) {
 
   const key = args[0];
   const value = args[1];
+  let nx = false;
+  let xx = false;
+
+  // Parse optional flags
+  for (let i = 2; i < args.length; i++) {
+    const flag = args[i].toUpperCase();
+    if (flag === 'NX') {
+      nx = true;
+    } else if (flag === 'XX') {
+      xx = true;
+    } else {
+      throw new RespError(`syntax error for SET command`);
+    }
+  }
+
+  // NX and XX are mutually exclusive
+  if (nx && xx) {
+    throw new RespError(
+      `syntax error: NX and XX options at the same time are not compatible`
+    );
+  }
+
+  const keyExists = store.has(key);
+
+  // Check NX condition: only set if key doesn't exist
+  if (nx && keyExists) {
+    return null;
+  }
+
+  // Check XX condition: only set if key exists
+  if (xx && !keyExists) {
+    return null;
+  }
 
   if (getNumberFromString(value) !== undefined) {
     store.set(key, Number(value));
