@@ -34,10 +34,6 @@ RUN mkdir -p /app/data
 # Expose Redis default port
 EXPOSE 6379
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD node -e "const net = require('net'); const socket = net.createConnection({port: 6379}); socket.on('connect', () => {socket.write('PING\r\n'); socket.on('data', () => socket.destroy()); socket.on('error', () => process.exit(1));}); socket.on('error', () => process.exit(1)); setTimeout(() => process.exit(1), 2000);"
-
 # Set environment variables
 ENV NODE_ENV=production \
     PORT=6379 \
