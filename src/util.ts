@@ -62,16 +62,28 @@ export function globPatternToRegex(pattern: string): RegExp {
       regex += '.';
       i++;
     } else if (char === '[') {
-      // Character class
-      const closeIdx = pattern.indexOf(']', i);
-      if (closeIdx === -1) {
+      // Character class, handle escaped closing brackets
+      let j = i + 1;
+      let found = false;
+      while (j < pattern.length) {
+        if (pattern[j] === '\\' && j + 1 < pattern.length) {
+          // Skip escaped character
+          j += 2;
+        } else if (pattern[j] === ']') {
+          found = true;
+          break;
+        } else {
+          j++;
+        }
+      }
+      if (!found) {
         // No closing bracket, treat as literal
         regex += escapeRegexChar(char);
         i++;
       } else {
-        const classContent = pattern.substring(i + 1, closeIdx);
+        const classContent = pattern.substring(i + 1, j);
         regex += '[' + classContent + ']';
-        i = closeIdx + 1;
+        i = j + 1;
       }
     } else {
       // Regular character, escape if needed
