@@ -11,14 +11,48 @@ JS Cache is a Redis-compatible in-memory cache in Node.js. This project is made 
 
 ## Installation
 
-```
+```bash
 npm install
 ```
 
 ## Running the server
 
-```
+### Development
+
+```bash
 npm run dev
+```
+
+### Production Build
+
+```bash
+npm run build
+npm start
+```
+
+## Docker
+
+### Build Docker Image
+
+```bash
+docker build -t js-cache:latest .
+```
+
+### Run Docker Container
+
+```bash
+docker run -d \
+  --name js-cache \
+  -p 6379:6379 \
+  -v js-cache-data:/app/data \
+  js-cache:latest
+```
+
+### Test with redis-cli
+
+```bash
+redis-cli -p 6379
+PING  # Should return PONG
 ```
 
 ## Supported configurations
