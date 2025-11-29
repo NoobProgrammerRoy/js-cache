@@ -30,6 +30,7 @@ export interface IStore<K, V> {
   delete: (key: K) => boolean;
   clear: () => void;
   has: (key: K) => boolean;
+  keys: () => K[];
 }
 
 export interface IAOF {

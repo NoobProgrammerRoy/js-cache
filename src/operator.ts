@@ -4,6 +4,7 @@ import { IList, IStore, TDataType, TRespType } from './types.js';
 import {
   getIntFromString,
   getNumberFromString,
+  globPatternToRegex,
   isListDataType,
   isSetDataType,
   isStringDataType,
@@ -248,6 +249,43 @@ function handleExists(store: IStore<string, TDataType>, args: string[]) {
     throw new RespError('wrong number of arguments for EXISTS command');
 
   return args.filter((key) => store.has(key)).length;
+}
+
+function handleKeys(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 1)
+    throw new RespError('wrong number of arguments for KEYS command');
+
+  const pattern = args[0];
+  const regex = globPatternToRegex(pattern);
+  const allKeys = store.keys();
+
+  return allKeys.filter((key) => regex.test(key));
+}
+
+function handleType(store: IStore<string, TDataType>, args: string[]) {
+  if (args.length !== 1)
+    throw new RespError('wrong number of arguments for TYPE command');
+
+  const key = args[0];
+  const value = store.get(key);
+
+  if (value === undefined) {
+    return 'none';
+  }
+
+  if (isStringDataType(value)) {
+    return 'string';
+  }
+
+  if (isListDataType(value)) {
+    return 'list';
+  }
+
+  if (isSetDataType(value)) {
+    return 'set';
+  }
+
+  return 'none';
 }
 
 function handleFlushall(store: IStore<string, TDataType>, _args: string[]) {
@@ -1012,6 +1050,8 @@ const commands: Record<string, CommandHandler> = {
   APPEND: handleAppend,
   DEL: handleDel,
   EXISTS: handleExists,
+  KEYS: handleKeys,
+  TYPE: handleType,
   FLUSHALL: handleFlushall,
   PING: handlePing,
   ECHO: handleEcho,
