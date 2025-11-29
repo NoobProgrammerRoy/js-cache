@@ -57,4 +57,18 @@ describe('EXPIRE command', () => {
       done();
     }, 1100);
   });
+
+  it('should immediately expire key with negative milliseconds', () => {
+    executeCommand('SET', ['mykey', 'value']);
+    const result = executeCommand('EXPIRE', ['mykey', '-1']);
+    assert.strictEqual(result, 1);
+    assert.strictEqual(executeCommand('GET', ['mykey']), null);
+  });
+
+  it('should immediately expire key with zero milliseconds', () => {
+    executeCommand('SET', ['mykey', 'value']);
+    const result = executeCommand('EXPIRE', ['mykey', '0']);
+    assert.strictEqual(result, 1);
+    assert.strictEqual(executeCommand('GET', ['mykey']), null);
+  });
 });
