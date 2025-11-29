@@ -17,7 +17,7 @@ class MapStore implements IStore<string, TDataType> {
       return false;
     }
 
-    const isExpired = Date.now() > storeValue.expiration;
+    const isExpired = Date.now() >= storeValue.expiration;
     if (isExpired) {
       this.map.delete(key);
     }
