@@ -7,79 +7,73 @@ class MapStore implements IStore<string, TDataType> {
     this.map = new Map<string, IStoreValue>();
   }
 
-  private isExpired(key: string): boolean {
-    const storeValue = this.map.get(key);
-    if (storeValue === undefined) {
-      return false;
-    }
+  private isExpired(key: string) {
+    const value = this.map.get(key);
 
-    if (storeValue.expiration === null) {
-      return false;
-    }
+    if (value === undefined) return false;
+    if (value.expiration === null) return false;
 
-    const isExpired = Date.now() >= storeValue.expiration;
-    if (isExpired) {
-      this.map.delete(key);
-    }
+    const isExpired = Date.now() >= value.expiration;
+
+    if (isExpired) this.map.delete(key);
+
     return isExpired;
   }
 
-  get(key: string): TDataType | undefined {
-    if (this.isExpired(key)) {
-      return undefined;
-    }
-    const storeValue = this.map.get(key);
-    return storeValue?.data;
+  get(key: string) {
+    if (this.isExpired(key)) return undefined;
+
+    const value = this.map.get(key);
+
+    return value?.data;
   }
 
-  set(key: string, value: TDataType): void {
+  set(key: string, value: TDataType) {
     this.map.set(key, { data: value, expiration: null });
   }
 
-  delete(key: string): boolean {
-    if (this.isExpired(key)) {
-      return false;
-    }
+  delete(key: string) {
     return this.map.delete(key);
   }
 
-  clear(): void {
+  clear() {
     this.map.clear();
   }
 
-  has(key: string): boolean {
-    if (this.isExpired(key)) {
-      return false;
-    }
+  has(key: string) {
+    if (this.isExpired(key)) return false;
+
     return this.map.has(key);
   }
 
-  keys(): string[] {
-    const allKeys = Array.from(this.map.keys());
-    return allKeys.filter((key) => !this.isExpired(key));
+  keys() {
+    const keys = Array.from(this.map.keys());
+
+    return keys.filter((key) => !this.isExpired(key));
   }
 
-  setExpiration(key: string, expirationTimeMs: number): void {
-    const storeValue = this.map.get(key);
-    if (storeValue !== undefined) {
-      storeValue.expiration = expirationTimeMs;
-    }
+  setExpiration(key: string, expirationTimeMs: number) {
+    const value = this.map.get(key);
+
+    if (value !== undefined) value.expiration = expirationTimeMs;
   }
 
-  getExpiration(key: string): number | null {
-    if (this.isExpired(key)) {
-      return null;
-    }
-    const storeValue = this.map.get(key);
-    return storeValue?.expiration ?? null;
+  getExpiration(key: string) {
+    if (this.isExpired(key)) return null;
+
+    const value = this.map.get(key);
+
+    return value?.expiration ?? null;
   }
 
-  removeExpiration(key: string): boolean {
-    const storeValue = this.map.get(key);
-    if (storeValue !== undefined && storeValue.expiration !== null) {
-      storeValue.expiration = null;
+  removeExpiration(key: string) {
+    const value = this.map.get(key);
+
+    if (value !== undefined && value.expiration !== null) {
+      value.expiration = null;
       return true;
     }
+
     return false;
   }
 }

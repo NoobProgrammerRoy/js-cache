@@ -6,17 +6,21 @@ import { getResponseFromOperation } from './operator.js';
 import RespParser from './resp-parser.js';
 import { TRespType, TWriteOperation } from './types.js';
 
+// Configuration constants
 const PORT = process.env.PORT ?? 6379;
 const AOF_ENABLED = process.env.AOF_ENABLED === 'true';
 const AOF_FILENAME = process.env.AOF_FILENAME ?? 'appendonly.aof';
 
+// Initialize store and AOF
 const store = new MapStore();
 const aof = new AOF({ filename: AOF_FILENAME, isEnabled: AOF_ENABLED });
 
-async function replayAOFCommands(aof: AOF) {
+async function initAOF() {
+  console.log(`Loading AOF from ${AOF_FILENAME}`);
+
   const commands = await aof.load();
 
-  for (const command of commands) {
+  commands.forEach((command) => {
     const [operation, ...args] = command as string[];
 
     try {
@@ -24,15 +28,9 @@ async function replayAOFCommands(aof: AOF) {
     } catch (err) {
       console.error(`Failed to replay AOF command ${operation}:`, err);
     }
-  }
+  });
 
-  return commands.length;
-}
-
-async function initializeAOF(aof: AOF) {
-  console.log(`📂 Loading AOF from ${AOF_FILENAME}`);
-  const count = await replayAOFCommands(aof);
-  console.log(`✅ AOF loaded with ${count} commands`);
+  console.log(`AOF loaded with ${commands.length} commands`);
 }
 
 async function persistToAOF(operation: TWriteOperation, args: string[]) {
@@ -74,14 +72,6 @@ async function persistToAOF(operation: TWriteOperation, args: string[]) {
   else if (operation === 'PERSIST') await aof.append(operation, args[0]);
 }
 
-async function executeAndPersist(operation: string, args: string[]) {
-  const response = getResponseFromOperation(store, operation, args);
-
-  await persistToAOF(operation as TWriteOperation, args);
-
-  return response;
-}
-
 function createDataHandler(socket: net.Socket) {
   let buffer = '';
 
@@ -91,7 +81,7 @@ function createDataHandler(socket: net.Socket) {
 
     try {
       const command = RespParser.deserialize(buffer);
-      console.log('Received command:', command);
+      console.log('Command:', command);
 
       // Clear buffer after successful parse
       buffer = '';
@@ -100,7 +90,9 @@ function createDataHandler(socket: net.Socket) {
         const [cmd, ...args] = command as string[];
         const operation = cmd.toUpperCase();
 
-        response = await executeAndPersist(operation, args);
+        response = getResponseFromOperation(store, operation, args);
+
+        await persistToAOF(operation as TWriteOperation, args);
       }
 
       socket.write(RespParser.serialize(response));
@@ -120,10 +112,10 @@ function attachSocketHandlers(socket: net.Socket) {
 
   socket.on('data', dataHandler);
   socket.on('end', () => {
-    console.log('✅ Client disconnected');
+    console.log('Client disconnected');
   });
   socket.on('error', (err) => {
-    console.error('❌ Socket error:', err);
+    console.error('Socket error:', err);
   });
 }
 
@@ -137,16 +129,16 @@ function createServer() {
 
 function setupGracefulShutdown(server: net.Server) {
   function shutdown(signal: string) {
-    console.log(`📋 ${signal} received. Starting graceful shutdown`);
+    console.log(`${signal} received. Starting graceful shutdown`);
 
     server.close(() => {
-      console.log('✅ Server closed. No new connections accepted.');
+      console.log('Server closed. No new connections accepted.');
       process.exit(0);
     });
 
     // Force shutdown after 10 seconds
     setTimeout(() => {
-      console.error('⚠️ Forced shutdown after timeout');
+      console.error('Forced shutdown after timeout');
       process.exit(1);
     }, 10000);
   }
@@ -154,17 +146,17 @@ function setupGracefulShutdown(server: net.Server) {
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('uncaughtException', (err) => {
-    console.error('❌ Uncaught Exception:', err);
+    console.error('Uncaught Exception:', err);
     shutdown('uncaughtException');
   });
   process.on('unhandledRejection', (reason, promise) => {
-    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
     shutdown('unhandledRejection');
   });
 }
 
 async function start() {
-  await initializeAOF(aof);
+  await initAOF();
 
   const server = createServer();
 
