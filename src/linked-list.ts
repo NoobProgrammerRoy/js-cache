@@ -9,11 +9,8 @@ class LinkedList implements IList<string> {
   unshift(value: string) {
     const newNode: INode<string> = { value, next: this.head, prev: null };
 
-    if (this.head !== null) {
-      this.head.prev = newNode;
-    } else {
-      this.tail = newNode;
-    }
+    if (this.head !== null) this.head.prev = newNode;
+    else this.tail = newNode;
 
     this.head = newNode;
     this.size++;
@@ -25,14 +22,12 @@ class LinkedList implements IList<string> {
   push(value: string) {
     const newNode: INode<string> = { value, next: null, prev: this.tail };
 
-    if (this.tail !== null) {
-      this.tail.next = newNode;
-    } else {
-      this.head = newNode;
-    }
+    if (this.tail !== null) this.tail.next = newNode;
+    else this.head = newNode;
 
     this.tail = newNode;
     this.size++;
+
     return this.size;
   }
 
@@ -43,13 +38,11 @@ class LinkedList implements IList<string> {
     const value = this.head.value;
     this.head = this.head.next;
 
-    if (this.head !== null) {
-      this.head.prev = null;
-    } else {
-      this.tail = null;
-    }
+    if (this.head !== null) this.head.prev = null;
+    else this.tail = null;
 
     this.size--;
+
     return value;
   }
 
@@ -60,13 +53,11 @@ class LinkedList implements IList<string> {
     const value = this.tail.value;
     this.tail = this.tail.prev;
 
-    if (this.tail !== null) {
-      this.tail.next = null;
-    } else {
-      this.head = null;
-    }
+    if (this.tail !== null) this.tail.next = null;
+    else this.head = null;
 
     this.size--;
+
     return value;
   }
 
@@ -75,13 +66,16 @@ class LinkedList implements IList<string> {
     if (index < 0 || index >= this.size) return undefined;
 
     let current: INode<string> | null;
+
     if (index < this.size / 2) {
       current = this.head;
+
       for (let i = 0; i < index; i++) {
         current = current!.next;
       }
     } else {
       current = this.tail;
+
       for (let i = this.size - 1; i > index; i--) {
         current = current!.prev;
       }
@@ -91,25 +85,26 @@ class LinkedList implements IList<string> {
   }
 
   // Set element at index
-  set(index: number, value: string): void {
+  set(index: number, value: string) {
     if (index < 0 || index >= this.size) return;
 
     let current: INode<string> | null;
+
     if (index < this.size / 2) {
       current = this.head;
+
       for (let i = 0; i < index; i++) {
         current = current!.next;
       }
     } else {
       current = this.tail;
+
       for (let i = this.size - 1; i > index; i--) {
         current = current!.prev;
       }
     }
 
-    if (current) {
-      current.value = value;
-    }
+    if (current) current.value = value;
   }
 
   // Get slice of elements [start, end]
@@ -127,13 +122,16 @@ class LinkedList implements IList<string> {
     if (normalizedStart > normalizedEnd) return result;
 
     let current: INode<string> | null;
+
     if (normalizedStart < this.size / 2) {
       current = this.head;
+
       for (let i = 0; i < normalizedStart; i++) {
         current = current!.next;
       }
     } else {
       current = this.tail;
+
       for (let i = this.size - 1; i > normalizedStart; i--) {
         current = current!.prev;
       }
@@ -160,13 +158,16 @@ class LinkedList implements IList<string> {
 
     // Find the start node
     let startNode: INode<string> | null = null;
+
     if (start < this.size / 2) {
       startNode = this.head;
+
       for (let i = 0; i < start; i++) {
         startNode = startNode!.next;
       }
     } else {
       startNode = this.tail;
+
       for (let i = this.size - 1; i > start; i--) {
         startNode = startNode!.prev;
       }
@@ -174,13 +175,16 @@ class LinkedList implements IList<string> {
 
     // Find the end node
     let endNode: INode<string> | null = null;
+
     if (end < this.size / 2) {
       endNode = this.head;
+
       for (let i = 0; i < end; i++) {
         endNode = endNode!.next;
       }
     } else {
       endNode = this.tail;
+
       for (let i = this.size - 1; i > end; i--) {
         endNode = endNode!.prev;
       }
@@ -202,12 +206,12 @@ class LinkedList implements IList<string> {
   }
 
   // Get the length of the list
-  length(): number {
+  length() {
     return this.size;
   }
 
   // Clear the list
-  clear(): void {
+  clear() {
     this.head = null;
     this.tail = null;
     this.size = 0;

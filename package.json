@@ -1,6 +1,6 @@
 {
   "name": "js-cache",
-  "version": "0.1.15",
+  "version": "0.2.0",
   "description": "Redis-compatible in-memory cache built in JavaScript",
   "main": "dist/index.js",
   "scripts": {

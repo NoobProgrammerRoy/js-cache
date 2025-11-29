@@ -5,9 +5,9 @@ JS Cache is a Redis-compatible in-memory cache in Node.js. This project is made 
 ## Features
 
 - Zero run-time dependencies
-- Interact using Redis-CLI (RESP)
-- Configurable persistence via Append-Only Files (AOF)
 - Existing Redis commands supported
+- Interact using Redis-CLI (RESP2)
+- Configurable persistence via Append-Only Files (AOF)
 
 ## Installation
 
@@ -36,14 +36,28 @@ AOF_FILENAME = appendonly.aof (any supported filename)
 I'm planning to use this project as a learning reference to implement more features from Redis and similar solutions
 
 - More Redis commands
-- Redis data structures
+- Redis data structures (sorted sets, hashes etc)
+- Multiple eviction strategies
 - Improved AOF implementation
+- Access Control List
+
+## Implemented Features
+
+- ✅ RESP serialization/deserialization
+- ✅ Key-value operations
+- ✅ Append-Only File (AOF) persistence
+- ✅ TCP server with graceful shutdown
+- ✅ String commands
+- ✅ List commands
+- ✅ Set commands
+- ✅ Misc. server commands
+- ✅ Expiration and TTL
 
 ## Supported Commands
 
 ### String Commands
 
-GET, SET, MGET, MSET, STRLEN, GETRANGE, SETRANGE, GETDEL, APPEND, INCR, INCRBY, DECR, DECRBY
+GET, SET (with NX, XX, EX, PX flags), MGET, MSET, STRLEN, GETRANGE, SETRANGE, GETDEL, APPEND, INCR, INCRBY, DECR, DECRBY
 
 ### List Commands
 
@@ -53,28 +67,10 @@ LPUSH, RPUSH, LPOP, RPOP, LLEN, LRANGE, LINDEX, LSET, LTRIM
 
 SADD, SREM, SMEMBERS, SCARD, SISMEMBER, SMISMEMBER, SUNION, SINTER, SDIFF
 
-### Key Commands
+### Expiration / TTL Commands
 
-DEL, EXISTS, RENAME, TYPE
+EXPIRE, PEXPIRE, EXPIREAT, PEXPIREAT, TTL, PTTL, PERSIST
 
-### Server Commands
+### Misc. Server Commands
 
-FLUSHALL, PING, ECHO
-
-## Roadmap
-
-- ✅ RESP serialization/deserialization
-- ✅ Basic key-value operations
-- ✅ Append-Only File (AOF) persistence
-- ✅ TCP server with graceful shutdown
-- ✅ String commands
-- ✅ List commands
-- ✅ Set commands
-- [ ] Hash commands
-- [ ] Sorted set commands
-- [ ] Misc. server commands
-- [ ] Expiration and TTL
-- [ ] Improved AOF persistence
-- [ ] Multiple eviction strategies
-- [ ] Indexing
-- [ ] ACL
+FLUSHALL, PING, ECHO, DEL, EXISTS, RENAME, TYPE, KEYS

@@ -25,28 +25,29 @@ function handleSet(store: IStore<string, TDataType>, args: string[]) {
   // Parse optional flags
   for (let i = 2; i < args.length; i++) {
     const flag = args[i].toUpperCase();
-    if (flag === 'NX') {
-      nx = true;
-    } else if (flag === 'XX') {
-      xx = true;
-    } else if (flag === 'EX') {
-      if (i + 1 >= args.length) {
+
+    if (flag === 'NX') nx = true;
+    else if (flag === 'XX') xx = true;
+    else if (flag === 'EX') {
+      if (i + 1 >= args.length)
         throw new RespError('syntax error for SET command');
-      }
+
       const seconds = getIntFromString(args[i + 1]);
-      if (seconds === undefined || seconds <= 0) {
+
+      if (seconds === undefined || seconds <= 0)
         throw new RespError('value is not an integer or out of range');
-      }
+
       exSeconds = seconds;
       i++; // Skip the next argument (the value)
     } else if (flag === 'PX') {
-      if (i + 1 >= args.length) {
+      if (i + 1 >= args.length)
         throw new RespError('syntax error for SET command');
-      }
+
       const milliseconds = getIntFromString(args[i + 1]);
-      if (milliseconds === undefined || milliseconds <= 0) {
+
+      if (milliseconds === undefined || milliseconds <= 0)
         throw new RespError('value is not an integer or out of range');
-      }
+
       pxMilliseconds = milliseconds;
       i++; // Skip the next argument (the value)
     } else {
@@ -68,25 +69,14 @@ function handleSet(store: IStore<string, TDataType>, args: string[]) {
     );
   }
 
-  const keyExists = store.has(key);
+  const isExistingKey = store.has(key);
 
-  // Check NX condition: only set if key doesn't exist
-  if (nx && keyExists) {
-    return null;
-  }
+  if (nx && isExistingKey) return null;
+  if (xx && !isExistingKey) return null;
 
-  // Check XX condition: only set if key exists
-  if (xx && !keyExists) {
-    return null;
-  }
+  if (getNumberFromString(value) !== undefined) store.set(key, Number(value));
+  else store.set(key, value);
 
-  if (getNumberFromString(value) !== undefined) {
-    store.set(key, Number(value));
-  } else {
-    store.set(key, value);
-  }
-
-  // Set expiration if provided
   if (exSeconds !== null) {
     const expirationTimeMs = Date.now() + exSeconds * 1000;
     store.setExpiration(key, expirationTimeMs);
@@ -106,30 +96,23 @@ function handleMset(store: IStore<string, TDataType>, args: string[]) {
     const key = args[i];
     const value = args[i + 1];
 
-    if (getNumberFromString(value) !== undefined) {
-      store.set(key, Number(value));
-    } else {
-      store.set(key, value);
-    }
+    if (getNumberFromString(value) !== undefined) store.set(key, Number(value));
+    else store.set(key, value);
   }
 
   return 'OK';
 }
 
 function handleGet(store: IStore<string, TDataType>, args: string[]) {
-  if (args.length < 1)
+  if (args.length !== 1)
     throw new RespError('wrong number of arguments for GET command');
 
   const key = args[0];
   const value = store.get(key);
 
   if (value === undefined) return null;
-
-  if (!isStringDataType(value)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
-
-  if (typeof value === 'number') return value + '';
+  if (!isStringDataType(value)) throw new RespError(WRONGTYPE_ERROR);
+  if (typeof value === 'number') return value.toString();
 
   return value;
 }
@@ -143,66 +126,52 @@ function handleMget(store: IStore<string, TDataType>, args: string[]) {
   for (const key of args) {
     const value = store.get(key);
 
-    if (value === undefined) {
-      result.push(null);
-    } else if (!isStringDataType(value)) {
-      result.push(null);
-    } else if (typeof value === 'string') {
-      result.push(value);
-    } else if (typeof value === 'number') {
-      result.push(value.toString());
-    }
+    if (value === undefined) result.push(null);
+    else if (!isStringDataType(value)) result.push(null);
+    else if (typeof value === 'number') result.push(value.toString());
+    else result.push(value);
   }
 
   return result;
 }
 
 function handleStrlen(store: IStore<string, TDataType>, args: string[]) {
-  if (args.length < 1)
+  if (args.length !== 1)
     throw new RespError('wrong number of arguments for STRLEN command');
 
   const key = args[0];
   const value = store.get(key);
 
   if (value === undefined) return 0;
+  if (!isStringDataType(value)) throw new RespError(WRONGTYPE_ERROR);
+  if (typeof value === 'number') return value.toString().length;
 
-  if (!isStringDataType(value)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
-
-  if (typeof value === 'string') {
-    return value.length;
-  }
-
-  return value.toString().length;
+  return value.length;
 }
 
 function handleGetRange(store: IStore<string, TDataType>, args: string[]) {
-  if (args.length < 3)
+  if (args.length !== 3)
     throw new RespError('wrong number of arguments for GETRANGE command');
 
   const key = args[0];
   const startStr = args[1];
   const endStr = args[2];
 
-  const start = getNumberFromString(startStr);
+  const start = getIntFromString(startStr);
+  const end = getIntFromString(endStr);
+
   if (start === undefined)
     throw new RespError('value is not an integer or out of range');
-
-  const end = getNumberFromString(endStr);
   if (end === undefined)
     throw new RespError('value is not an integer or out of range');
 
   const value = store.get(key);
 
   if (value === undefined) return '';
-
-  if (!isStringDataType(value)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
+  if (!isStringDataType(value)) throw new RespError(WRONGTYPE_ERROR);
 
   // Convert value to string (handles both string and number types)
-  const str = typeof value === 'number' ? value.toString() : String(value);
+  const str = typeof value === 'number' ? value.toString() : value;
   const len = str.length;
 
   // Handle negative indices
@@ -217,39 +186,32 @@ function handleGetRange(store: IStore<string, TDataType>, args: string[]) {
 }
 
 function handleSetRange(store: IStore<string, TDataType>, args: string[]) {
-  if (args.length < 3)
+  if (args.length !== 3)
     throw new RespError('wrong number of arguments for SETRANGE command');
 
   const key = args[0];
   const offsetStr = args[1];
   const valueToSet = args[2];
 
-  const offset = getNumberFromString(offsetStr);
-  if (offset === undefined)
-    throw new RespError('value is not an integer or out of range');
+  const offset = getIntFromString(offsetStr);
 
-  if (offset < 0)
+  if (offset === undefined || offset < 0)
     throw new RespError('value is not an integer or out of range');
 
   const currentValue = store.get(key);
 
-  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+  if (currentValue !== undefined && !isStringDataType(currentValue))
     throw new RespError(WRONGTYPE_ERROR);
-  }
 
   // Convert current value to string (or empty string if non-existent)
   let str = '';
-  if (currentValue !== undefined) {
+
+  if (currentValue !== undefined)
     str =
-      typeof currentValue === 'number'
-        ? currentValue.toString()
-        : String(currentValue);
-  }
+      typeof currentValue === 'number' ? currentValue.toString() : currentValue;
 
   // If offset is beyond current length, pad with null bytes
-  if (offset > str.length) {
-    str = str + '\x00'.repeat(offset - str.length);
-  }
+  if (offset > str.length) str = str + '\x00'.repeat(offset - str.length);
 
   // Overwrite from offset to offset + valueToSet.length
   const before = str.substring(0, offset);
@@ -262,46 +224,39 @@ function handleSetRange(store: IStore<string, TDataType>, args: string[]) {
 }
 
 function handleGetDel(store: IStore<string, TDataType>, args: string[]) {
-  if (args.length < 1)
+  if (args.length !== 1)
     throw new RespError('wrong number of arguments for GETDEL command');
 
   const key = args[0];
   const value = store.get(key);
 
   if (value === undefined) return null;
-
-  if (!isStringDataType(value)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
+  if (!isStringDataType(value)) throw new RespError(WRONGTYPE_ERROR);
 
   store.delete(key);
 
-  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return value.toString();
 
-  return value.toString();
+  return value;
 }
 
 function handleAppend(store: IStore<string, TDataType>, args: string[]) {
-  if (args.length < 2)
+  if (args.length !== 2)
     throw new RespError('wrong number of arguments for APPEND command');
 
   const key = args[0];
   const valueToAppend = args[1];
   const currentValue = store.get(key);
 
-  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+  if (currentValue !== undefined && !isStringDataType(currentValue))
     throw new RespError(WRONGTYPE_ERROR);
-  }
 
   let newValue: string;
 
-  if (currentValue === undefined) {
-    newValue = valueToAppend;
-  } else if (typeof currentValue === 'string') {
-    newValue = currentValue.concat(valueToAppend);
-  } else {
+  if (currentValue === undefined) newValue = valueToAppend;
+  else if (typeof currentValue === 'number')
     newValue = currentValue.toString().concat(valueToAppend);
-  }
+  else newValue = currentValue.concat(valueToAppend);
 
   store.set(key, newValue);
 
@@ -340,21 +295,10 @@ function handleType(store: IStore<string, TDataType>, args: string[]) {
   const key = args[0];
   const value = store.get(key);
 
-  if (value === undefined) {
-    return 'none';
-  }
-
-  if (isStringDataType(value)) {
-    return 'string';
-  }
-
-  if (isListDataType(value)) {
-    return 'list';
-  }
-
-  if (isSetDataType(value)) {
-    return 'set';
-  }
+  if (value === undefined) return 'none';
+  if (isStringDataType(value)) return 'string';
+  if (isListDataType(value)) return 'list';
+  if (isSetDataType(value)) return 'set';
 
   return 'none';
 }
@@ -385,13 +329,8 @@ function handleRename(store: IStore<string, TDataType>, args: string[]) {
   const oldKey = args[0];
   const newKey = args[1];
 
-  if (!store.has(oldKey)) {
-    throw new RespError('ERR no such key');
-  }
-
-  if (oldKey === newKey) {
-    return 'OK';
-  }
+  if (!store.has(oldKey)) throw new RespError('ERR no such key');
+  if (oldKey === newKey) return 'OK';
 
   const value = store.get(oldKey);
 
@@ -402,22 +341,21 @@ function handleRename(store: IStore<string, TDataType>, args: string[]) {
 }
 
 function handleIncr(store: IStore<string, TDataType>, args: string[]) {
-  if (args.length < 1)
+  if (args.length !== 1)
     throw new RespError('wrong number of arguments for INCR command');
 
   const key = args[0];
   const currentValue = store.get(key);
 
-  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+  if (currentValue !== undefined && !isStringDataType(currentValue))
     throw new RespError(WRONGTYPE_ERROR);
-  }
 
   let newValue: number;
 
   if (currentValue === undefined) newValue = 1;
   else if (
     typeof currentValue === 'number' ||
-    getNumberFromString(currentValue) !== undefined
+    getIntFromString(currentValue) !== undefined
   )
     newValue = Number(currentValue) + 1;
   else throw new RespError('value is not an integer or out of range');
@@ -428,28 +366,28 @@ function handleIncr(store: IStore<string, TDataType>, args: string[]) {
 }
 
 function handleIncrby(store: IStore<string, TDataType>, args: string[]) {
-  if (args.length < 2)
+  if (args.length !== 2)
     throw new RespError('wrong number of arguments for INCRBY command');
 
   const key = args[0];
   const incrementStr = args[1];
 
-  const increment = getNumberFromString(incrementStr);
+  const increment = getIntFromString(incrementStr);
+
   if (increment === undefined)
     throw new RespError('value is not an integer or out of range');
 
   const currentValue = store.get(key);
 
-  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+  if (currentValue !== undefined && !isStringDataType(currentValue))
     throw new RespError(WRONGTYPE_ERROR);
-  }
 
   let newValue: number;
 
   if (currentValue === undefined) newValue = increment;
   else if (
     typeof currentValue === 'number' ||
-    getNumberFromString(currentValue) !== undefined
+    getIntFromString(currentValue) !== undefined
   )
     newValue = Number(currentValue) + increment;
   else throw new RespError('value is not an integer or out of range');
@@ -466,16 +404,15 @@ function handleDecr(store: IStore<string, TDataType>, args: string[]) {
   const key = args[0];
   const currentValue = store.get(key);
 
-  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+  if (currentValue !== undefined && !isStringDataType(currentValue))
     throw new RespError(WRONGTYPE_ERROR);
-  }
 
   let newValue: number;
 
   if (currentValue === undefined) newValue = -1;
   else if (
     typeof currentValue === 'number' ||
-    getNumberFromString(currentValue) !== undefined
+    getIntFromString(currentValue) !== undefined
   )
     newValue = Number(currentValue) - 1;
   else throw new RespError('value is not an integer or out of range');
@@ -486,28 +423,28 @@ function handleDecr(store: IStore<string, TDataType>, args: string[]) {
 }
 
 function handleDecrby(store: IStore<string, TDataType>, args: string[]) {
-  if (args.length < 2)
+  if (args.length !== 2)
     throw new RespError('wrong number of arguments for DECRBY command');
 
   const key = args[0];
   const decrementStr = args[1];
 
-  const decrement = getNumberFromString(decrementStr);
+  const decrement = getIntFromString(decrementStr);
+
   if (decrement === undefined)
     throw new RespError('value is not an integer or out of range');
 
   const currentValue = store.get(key);
 
-  if (currentValue !== undefined && !isStringDataType(currentValue)) {
+  if (currentValue !== undefined && !isStringDataType(currentValue))
     throw new RespError(WRONGTYPE_ERROR);
-  }
 
   let newValue: number;
 
   if (currentValue === undefined) newValue = -decrement;
   else if (
     typeof currentValue === 'number' ||
-    getNumberFromString(currentValue) !== undefined
+    getIntFromString(currentValue) !== undefined
   )
     newValue = Number(currentValue) - decrement;
   else throw new RespError('value is not an integer or out of range');
@@ -526,20 +463,15 @@ function handleLpush(store: IStore<string, TDataType>, args: string[]) {
 
   const currentValue = store.get(key);
 
-  if (currentValue !== undefined && !isListDataType(currentValue)) {
+  if (currentValue !== undefined && !isListDataType(currentValue))
     throw new RespError(WRONGTYPE_ERROR);
-  }
 
   let list: IList<string>;
-  if (currentValue === undefined) {
-    list = new LinkedList();
-  } else {
-    list = currentValue;
-  }
 
-  for (const value of values) {
-    list.unshift(value);
-  }
+  if (currentValue === undefined) list = new LinkedList();
+  else list = currentValue;
+
+  for (const value of values) list.unshift(value);
 
   store.set(key, list);
 
@@ -555,20 +487,15 @@ function handleRpush(store: IStore<string, TDataType>, args: string[]) {
 
   const currentValue = store.get(key);
 
-  if (currentValue !== undefined && !isListDataType(currentValue)) {
+  if (currentValue !== undefined && !isListDataType(currentValue))
     throw new RespError(WRONGTYPE_ERROR);
-  }
 
   let list: IList<string>;
-  if (currentValue === undefined) {
-    list = new LinkedList();
-  } else {
-    list = currentValue;
-  }
 
-  for (const value of values) {
-    list.push(value);
-  }
+  if (currentValue === undefined) list = new LinkedList();
+  else list = currentValue;
+
+  for (const value of values) list.push(value);
 
   store.set(key, list);
 
@@ -576,7 +503,7 @@ function handleRpush(store: IStore<string, TDataType>, args: string[]) {
 }
 
 function handleLrange(store: IStore<string, TDataType>, args: string[]) {
-  if (args.length < 3)
+  if (args.length !== 3)
     throw new RespError('wrong number of arguments for LRANGE command');
 
   const key = args[0];
@@ -584,43 +511,32 @@ function handleLrange(store: IStore<string, TDataType>, args: string[]) {
   const stopStr = args[2];
 
   const start = getIntFromString(startStr);
+  const stop = getIntFromString(stopStr);
+
   if (start === undefined)
     throw new RespError('value is not an integer or out of range');
-
-  const stop = getIntFromString(stopStr);
   if (stop === undefined)
     throw new RespError('value is not an integer or out of range');
 
   const currentValue = store.get(key);
 
-  // Key doesn't exist - return empty array
-  if (currentValue === undefined) {
-    return [];
-  }
-
-  // Key is not a list - throw WRONGTYPE error
-  if (!isListDataType(currentValue)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
+  if (currentValue === undefined) return [];
+  if (!isListDataType(currentValue)) throw new RespError(WRONGTYPE_ERROR);
 
   const list = currentValue as IList<string>;
+
   return list.slice(start, stop);
 }
 
 function handleLlen(store: IStore<string, TDataType>, args: string[]) {
-  if (args.length < 1)
+  if (args.length !== 1)
     throw new RespError('wrong number of arguments for LLEN command');
 
   const key = args[0];
   const currentValue = store.get(key);
 
-  if (currentValue === undefined) {
-    return 0;
-  }
-
-  if (!isListDataType(currentValue)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
+  if (currentValue === undefined) return 0;
+  if (!isListDataType(currentValue)) throw new RespError(WRONGTYPE_ERROR);
 
   return currentValue.length();
 }
@@ -634,21 +550,16 @@ function handleLpop(store: IStore<string, TDataType>, args: string[]) {
 
   const currentValue = store.get(key);
 
-  if (currentValue === undefined) {
-    return null;
-  }
-
-  if (!isListDataType(currentValue)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
+  if (currentValue === undefined) return null;
+  if (!isListDataType(currentValue)) throw new RespError(WRONGTYPE_ERROR);
 
   const list = currentValue;
 
   if (countStr === undefined) {
     const result = list.shift() ?? null;
-    if (list.length() === 0) {
-      store.delete(key);
-    }
+
+    if (list.length() === 0) store.delete(key);
+
     return result;
   }
 
@@ -661,13 +572,13 @@ function handleLpop(store: IStore<string, TDataType>, args: string[]) {
 
   for (let i = 0; i < count; i++) {
     const value = list.shift();
+
     if (value === undefined) break;
+
     result.push(value);
   }
 
-  if (list.length() === 0) {
-    store.delete(key);
-  }
+  if (list.length() === 0) store.delete(key);
 
   return result;
 }
@@ -681,21 +592,16 @@ function handleRpop(store: IStore<string, TDataType>, args: string[]) {
 
   const currentValue = store.get(key);
 
-  if (currentValue === undefined) {
-    return null;
-  }
-
-  if (!isListDataType(currentValue)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
+  if (currentValue === undefined) return null;
+  if (!isListDataType(currentValue)) throw new RespError(WRONGTYPE_ERROR);
 
   const list = currentValue;
 
   if (countStr === undefined) {
     const result = list.pop() ?? null;
-    if (list.length() === 0) {
-      store.delete(key);
-    }
+
+    if (list.length() === 0) store.delete(key);
+
     return result;
   }
 
@@ -708,58 +614,50 @@ function handleRpop(store: IStore<string, TDataType>, args: string[]) {
 
   for (let i = 0; i < count; i++) {
     const value = list.pop();
+
     if (value === undefined) break;
+
     result.push(value);
   }
 
-  if (list.length() === 0) {
-    store.delete(key);
-  }
+  if (list.length() === 0) store.delete(key);
 
   return result;
 }
 
 function handleLindex(store: IStore<string, TDataType>, args: string[]) {
-  if (args.length < 2)
+  if (args.length !== 2)
     throw new RespError('wrong number of arguments for LINDEX command');
 
   const key = args[0];
   const indexStr = args[1];
 
   const index = getIntFromString(indexStr);
+
   if (index === undefined)
     throw new RespError('value is not an integer or out of range');
 
   const currentValue = store.get(key);
 
-  if (currentValue === undefined) {
-    return null;
-  }
-
-  if (!isListDataType(currentValue)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
+  if (currentValue === undefined) return null;
+  if (!isListDataType(currentValue)) throw new RespError(WRONGTYPE_ERROR);
 
   const list = currentValue;
   const length = list.length();
 
   // Handle negative indices
   let normalizedIndex = index;
-  if (index < 0) {
-    normalizedIndex = length + index;
-  }
 
-  // Check if index is out of range
-  if (normalizedIndex < 0 || normalizedIndex >= length) {
-    return null;
-  }
+  if (index < 0) normalizedIndex = length + index;
+  if (normalizedIndex < 0 || normalizedIndex >= length) return null;
 
   const value = list.at(normalizedIndex);
+
   return value ?? null;
 }
 
 function handleLset(store: IStore<string, TDataType>, args: string[]) {
-  if (args.length < 3)
+  if (args.length !== 3)
     throw new RespError('wrong number of arguments for LSET command');
 
   const key = args[0];
@@ -767,32 +665,24 @@ function handleLset(store: IStore<string, TDataType>, args: string[]) {
   const newValue = args[2];
 
   const index = getIntFromString(indexStr);
+
   if (index === undefined)
     throw new RespError('value is not an integer or out of range');
 
   const currentValue = store.get(key);
 
-  if (currentValue === undefined) {
-    throw new RespError('no such key');
-  }
-
-  if (!isListDataType(currentValue)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
+  if (currentValue === undefined) throw new RespError('no such key');
+  if (!isListDataType(currentValue)) throw new RespError(WRONGTYPE_ERROR);
 
   const list = currentValue;
   const length = list.length();
 
   // Handle negative indices
   let normalizedIndex = index;
-  if (index < 0) {
-    normalizedIndex = length + index;
-  }
 
-  // Check if index is out of range
-  if (normalizedIndex < 0 || normalizedIndex >= length) {
+  if (index < 0) normalizedIndex = length + index;
+  if (normalizedIndex < 0 || normalizedIndex >= length)
     throw new RespError('index out of range');
-  }
 
   list.set(normalizedIndex, newValue);
 
@@ -800,7 +690,7 @@ function handleLset(store: IStore<string, TDataType>, args: string[]) {
 }
 
 function handleLtrim(store: IStore<string, TDataType>, args: string[]) {
-  if (args.length < 3)
+  if (args.length !== 3)
     throw new RespError('wrong number of arguments for LTRIM command');
 
   const key = args[0];
@@ -808,23 +698,17 @@ function handleLtrim(store: IStore<string, TDataType>, args: string[]) {
   const stopStr = args[2];
 
   const start = getIntFromString(startStr);
+  const stop = getIntFromString(stopStr);
+
   if (start === undefined)
     throw new RespError('value is not an integer or out of range');
-
-  const stop = getIntFromString(stopStr);
   if (stop === undefined)
     throw new RespError('value is not an integer or out of range');
 
   const currentValue = store.get(key);
 
-  // If key doesn't exist, it's a no-op
-  if (currentValue === undefined) {
-    return 'OK';
-  }
-
-  if (!isListDataType(currentValue)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
+  if (currentValue === undefined) return 'OK';
+  if (!isListDataType(currentValue)) throw new RespError(WRONGTYPE_ERROR);
 
   const list = currentValue;
   const size = list.length();
@@ -836,9 +720,7 @@ function handleLtrim(store: IStore<string, TDataType>, args: string[]) {
 
   list.trim(normalizedStart, normalizedEnd);
 
-  if (list.length() === 0) {
-    store.delete(key);
-  }
+  if (list.length() === 0) store.delete(key);
 
   return 'OK';
 }
@@ -852,18 +734,16 @@ function handleSadd(store: IStore<string, TDataType>, args: string[]) {
 
   const currentValue = store.get(key);
 
-  if (currentValue !== undefined && !isSetDataType(currentValue)) {
+  if (currentValue !== undefined && !isSetDataType(currentValue))
     throw new RespError(WRONGTYPE_ERROR);
-  }
 
   let set: Set<string>;
-  if (currentValue === undefined) {
-    set = new Set();
-  } else {
-    set = currentValue;
-  }
+
+  if (currentValue === undefined) set = new Set();
+  else set = currentValue;
 
   let addedCount = 0;
+
   for (const member of members) {
     if (!set.has(member)) {
       set.add(member);
@@ -883,13 +763,8 @@ function handleSmembers(store: IStore<string, TDataType>, args: string[]) {
   const key = args[0];
   const currentValue = store.get(key);
 
-  if (currentValue === undefined) {
-    return [];
-  }
-
-  if (!isSetDataType(currentValue)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
+  if (currentValue === undefined) return [];
+  if (!isSetDataType(currentValue)) throw new RespError(WRONGTYPE_ERROR);
 
   return Array.from(currentValue);
 }
@@ -901,13 +776,8 @@ function handleScard(store: IStore<string, TDataType>, args: string[]) {
   const key = args[0];
   const currentValue = store.get(key);
 
-  if (currentValue === undefined) {
-    return 0;
-  }
-
-  if (!isSetDataType(currentValue)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
+  if (currentValue === undefined) return 0;
+  if (!isSetDataType(currentValue)) throw new RespError(WRONGTYPE_ERROR);
 
   return currentValue.size;
 }
@@ -921,14 +791,8 @@ function handleSrem(store: IStore<string, TDataType>, args: string[]) {
 
   const currentValue = store.get(key);
 
-  // If key doesn't exist, return 0 (no members removed)
-  if (currentValue === undefined) {
-    return 0;
-  }
-
-  if (!isSetDataType(currentValue)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
+  if (currentValue === undefined) return 0;
+  if (!isSetDataType(currentValue)) throw new RespError(WRONGTYPE_ERROR);
 
   const set = currentValue;
   let removedCount = 0;
@@ -940,10 +804,7 @@ function handleSrem(store: IStore<string, TDataType>, args: string[]) {
     }
   }
 
-  // Delete key if set is now empty
-  if (set.size === 0) {
-    store.delete(key);
-  }
+  if (set.size === 0) store.delete(key);
 
   return removedCount;
 }
@@ -957,13 +818,8 @@ function handleSismember(store: IStore<string, TDataType>, args: string[]) {
 
   const currentValue = store.get(key);
 
-  if (currentValue === undefined) {
-    return 0;
-  }
-
-  if (!isSetDataType(currentValue)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
+  if (currentValue === undefined) return 0;
+  if (!isSetDataType(currentValue)) throw new RespError(WRONGTYPE_ERROR);
 
   return currentValue.has(member) ? 1 : 0;
 }
@@ -977,13 +833,8 @@ function handleSmismember(store: IStore<string, TDataType>, args: string[]) {
 
   const currentValue = store.get(key);
 
-  if (currentValue === undefined) {
-    return members.map(() => 0);
-  }
-
-  if (!isSetDataType(currentValue)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
+  if (currentValue === undefined) return members.map(() => 0);
+  if (!isSetDataType(currentValue)) throw new RespError(WRONGTYPE_ERROR);
 
   return members.map((member) => (currentValue.has(member) ? 1 : 0));
 }
@@ -999,13 +850,8 @@ function handleSunion(store: IStore<string, TDataType>, args: string[]) {
     const value = store.get(key);
 
     // Skip non-existent keys (treated as empty sets)
-    if (value === undefined) {
-      continue;
-    }
-
-    if (!isSetDataType(value)) {
-      throw new RespError(WRONGTYPE_ERROR);
-    }
+    if (value === undefined) continue;
+    if (!isSetDataType(value)) throw new RespError(WRONGTYPE_ERROR);
 
     for (const member of value) {
       unionSet.add(member);
@@ -1029,25 +875,20 @@ function handleSinter(
     const value = store.get(key);
 
     // If any key is non-existent (empty set), result is empty
-    if (value === undefined) {
-      return [];
-    }
+    if (value === undefined) return [];
+    if (!isSetDataType(value)) throw new RespError(WRONGTYPE_ERROR);
 
-    if (!isSetDataType(value)) {
-      throw new RespError(WRONGTYPE_ERROR);
-    }
-
-    if (intersectionSet === null) {
+    if (intersectionSet === null)
       // Initialize with first set
       intersectionSet = new Set(value);
-    } else {
+    else {
       // Keep only members that are in both sets
       const nextSet = new Set<string>();
+
       for (const member of intersectionSet) {
-        if (value.has(member)) {
-          nextSet.add(member);
-        }
+        if (value.has(member)) nextSet.add(member);
       }
+
       intersectionSet = nextSet;
     }
   }
@@ -1066,13 +907,8 @@ function handleSdiff(
   const firstKey = keys[0];
   const firstValue = store.get(firstKey);
 
-  if (firstValue === undefined) {
-    return [];
-  }
-
-  if (!isSetDataType(firstValue)) {
-    throw new RespError(WRONGTYPE_ERROR);
-  }
+  if (firstValue === undefined) return [];
+  if (!isSetDataType(firstValue)) throw new RespError(WRONGTYPE_ERROR);
 
   // Start with first set (or empty set if non-existent)
   const diffSet = new Set<string>();
@@ -1087,13 +923,8 @@ function handleSdiff(
     const value = store.get(key);
 
     // Skip non-existent keys (treated as empty sets)
-    if (value === undefined) {
-      continue;
-    }
-
-    if (!isSetDataType(value)) {
-      throw new RespError(WRONGTYPE_ERROR);
-    }
+    if (value === undefined) continue;
+    if (!isSetDataType(value)) throw new RespError(WRONGTYPE_ERROR);
 
     // Remove members from diffSet that are in this set
     for (const member of value) {
@@ -1111,16 +942,14 @@ function handleExpire(store: IStore<string, TDataType>, args: string[]) {
   const key = args[0];
   const seconds = getIntFromString(args[1]);
 
-  if (seconds === undefined) {
+  if (seconds === undefined)
     throw new RespError('value is not an integer or out of range');
-  }
-
-  if (!store.has(key)) {
-    return 0;
-  }
+  if (!store.has(key)) return 0;
 
   const expirationTimeMs = Date.now() + seconds * 1000;
+
   store.setExpiration(key, expirationTimeMs);
+
   return 1;
 }
 
@@ -1131,16 +960,14 @@ function handlePexpire(store: IStore<string, TDataType>, args: string[]) {
   const key = args[0];
   const milliseconds = getIntFromString(args[1]);
 
-  if (milliseconds === undefined) {
+  if (milliseconds === undefined)
     throw new RespError('value is not an integer or out of range');
-  }
-
-  if (!store.has(key)) {
-    return 0;
-  }
+  if (!store.has(key)) return 0;
 
   const expirationTimeMs = Date.now() + milliseconds;
+
   store.setExpiration(key, expirationTimeMs);
+
   return 1;
 }
 
@@ -1151,16 +978,14 @@ function handleExpireat(store: IStore<string, TDataType>, args: string[]) {
   const key = args[0];
   const timestamp = getIntFromString(args[1]);
 
-  if (timestamp === undefined) {
+  if (timestamp === undefined)
     throw new RespError('value is not an integer or out of range');
-  }
-
-  if (!store.has(key)) {
-    return 0;
-  }
+  if (!store.has(key)) return 0;
 
   const expirationTimeMs = timestamp * 1000;
+
   store.setExpiration(key, expirationTimeMs);
+
   return 1;
 }
 
@@ -1171,15 +996,12 @@ function handlePexpireat(store: IStore<string, TDataType>, args: string[]) {
   const key = args[0];
   const timestampMs = getIntFromString(args[1]);
 
-  if (timestampMs === undefined) {
+  if (timestampMs === undefined)
     throw new RespError('value is not an integer or out of range');
-  }
-
-  if (!store.has(key)) {
-    return 0;
-  }
+  if (!store.has(key)) return 0;
 
   store.setExpiration(key, timestampMs);
+
   return 1;
 }
 
@@ -1189,15 +1011,11 @@ function handleTtl(store: IStore<string, TDataType>, args: string[]) {
 
   const key = args[0];
 
-  if (!store.has(key)) {
-    return -2;
-  }
+  if (!store.has(key)) return -2;
 
   const expirationTimeMs = store.getExpiration(key);
 
-  if (expirationTimeMs === null) {
-    return -1;
-  }
+  if (expirationTimeMs === null) return -1;
 
   const remainingMs = expirationTimeMs - Date.now();
   const remainingSeconds = Math.ceil(remainingMs / 1000);
@@ -1211,15 +1029,11 @@ function handlePttl(store: IStore<string, TDataType>, args: string[]) {
 
   const key = args[0];
 
-  if (!store.has(key)) {
-    return -2;
-  }
+  if (!store.has(key)) return -2;
 
   const expirationTimeMs = store.getExpiration(key);
 
-  if (expirationTimeMs === null) {
-    return -1;
-  }
+  if (expirationTimeMs === null) return -1;
 
   const remainingMs = expirationTimeMs - Date.now();
 
@@ -1232,11 +1046,10 @@ function handlePersist(store: IStore<string, TDataType>, args: string[]) {
 
   const key = args[0];
 
-  if (!store.has(key)) {
-    return 0;
-  }
+  if (!store.has(key)) return 0;
 
   const removed = store.removeExpiration(key);
+
   return removed ? 1 : 0;
 }
 

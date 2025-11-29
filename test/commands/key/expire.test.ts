@@ -26,6 +26,7 @@ describe('EXPIRE command', () => {
   it('should return 0 when setting expiration on already-expired key', (t, done) => {
     executeCommand('SET', ['mykey', 'value']);
     executeCommand('EXPIRE', ['mykey', '1']);
+
     // Wait for key to expire
     setTimeout(() => {
       const result = executeCommand('EXPIRE', ['mykey', '10']);
@@ -56,5 +57,19 @@ describe('EXPIRE command', () => {
       assert.strictEqual(executeCommand('GET', ['mykey']), null);
       done();
     }, 1100);
+  });
+
+  it('should immediately expire key with negative milliseconds', () => {
+    executeCommand('SET', ['mykey', 'value']);
+    const result = executeCommand('EXPIRE', ['mykey', '-1']);
+    assert.strictEqual(result, 1);
+    assert.strictEqual(executeCommand('GET', ['mykey']), null);
+  });
+
+  it('should immediately expire key with zero milliseconds', () => {
+    executeCommand('SET', ['mykey', 'value']);
+    const result = executeCommand('EXPIRE', ['mykey', '0']);
+    assert.strictEqual(result, 1);
+    assert.strictEqual(executeCommand('GET', ['mykey']), null);
   });
 });

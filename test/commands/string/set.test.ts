@@ -213,4 +213,22 @@ describe('SET command', () => {
       done();
     }, 600);
   });
+
+  it('should clear expiration when SET again without expiration flags', () => {
+    // Set key with expiration
+    executeCommand('SET', ['mykey', 'value1', 'EX', '10']);
+    let ttl = executeCommand('TTL', ['mykey']) as number;
+    assert.ok(ttl > 0 && ttl <= 10);
+
+    // SET again without expiration flags
+    const result = executeCommand('SET', ['mykey', 'value2']);
+    assert.strictEqual(result, 'OK');
+
+    // Expiration should be cleared
+    ttl = executeCommand('TTL', ['mykey']) as number;
+    assert.strictEqual(ttl, -1);
+
+    // Value should be updated
+    assert.strictEqual(executeCommand('GET', ['mykey']), 'value2');
+  });
 });
