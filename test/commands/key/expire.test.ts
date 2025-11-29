@@ -23,13 +23,14 @@ describe('EXPIRE command', () => {
     assert.strictEqual(result, 0);
   });
 
-  it('should return 0 when setting expiration on already-expired key', () => {
+  it('should return 0 when setting expiration on already-expired key', (t, done) => {
     executeCommand('SET', ['mykey', 'value']);
     executeCommand('EXPIRE', ['mykey', '1']);
     // Wait for key to expire
     setTimeout(() => {
       const result = executeCommand('EXPIRE', ['mykey', '10']);
       assert.strictEqual(result, 0);
+      done();
     }, 1100);
   });
 
