@@ -26,6 +26,10 @@ class MapStore implements IStore<string, TDataType> {
   has(key: string): boolean {
     return this.map.has(key);
   }
+
+  keys(): string[] {
+    return Array.from(this.map.keys());
+  }
 }
 
 export default MapStore;
